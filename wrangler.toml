@@ -1,0 +1,11 @@
+name = "warriors-fines"
+main = "src/worker.js"
+compatibility_date = "2026-08-08"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+[[kv_namespaces]]
+binding = "FINES_KV"
+id = "7770ad872df04061baaba5f84a872a6e"
