@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cockburn Lakes Warriors — Members Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;600;700&family=Work+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#132a6e;
+    --navy-deep:#0b1c4d;
+    --red:#d62828;
+    --gold:#f2b134;
+    --ink:#14161c;
+    --paper:#f6f3ec;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Work Sans', sans-serif;
+    color:var(--ink);
+    min-height:100vh;
+    background-color:var(--navy-deep);
+    background-image:
+      linear-gradient(180deg, rgba(11,28,77,.94) 0%, rgba(11,28,77,.90) 40%, rgba(11,28,77,.96) 100%),
+      url('/logo.png');
+    background-repeat:no-repeat;
+    background-position: top center, center 140px;
+    background-size: cover, 640px;
+    background-attachment: fixed, scroll;
+  }
+  .wrap{max-width:920px;margin:0 auto;padding:0 20px 80px;}
+  header.top{
+    text-align:center;
+    padding:46px 16px 26px;
+    color:#fff;
+  }
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    letter-spacing:.22em;
+    text-transform:uppercase;
+    font-size:12px;
+    color:var(--gold);
+    margin:0 0 10px;
+  }
+  h1.title{
+    font-family:'Anton', sans-serif;
+    text-transform:uppercase;
+    font-weight:400;
+    font-size:clamp(34px,7vw,58px);
+    line-height:.95;
+    margin:0;
+    letter-spacing:.01em;
+    text-shadow: 0 3px 0 rgba(0,0,0,.25);
+  }
+  .title .accent{color:var(--red);}
+  .subtitle{
+    max-width:520px;margin:14px auto 0;
+    font-size:15px;line-height:1.55;
+    color:rgba(255,255,255,.82);
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+    gap:18px;
+    margin-top:20px;
+  }
+  a.card{
+    display:block;text-decoration:none;color:var(--ink);
+    background:var(--paper);
+    border-radius:14px;
+    padding:24px 22px;
+    box-shadow:0 14px 34px rgba(0,0,0,.32);
+    transition:transform .12s, box-shadow .12s;
+    border-bottom:5px solid var(--navy);
+    position:relative;
+  }
+  a.card:hover{transform:translateY(-3px);box-shadow:0 18px 40px rgba(0,0,0,.4);}
+  a.card:nth-child(3n+2){border-bottom-color:var(--red);}
+  a.card:nth-child(3n){border-bottom-color:var(--gold);}
+  a.card.disabled{
+    pointer-events:none;opacity:.68;filter:grayscale(.15);
+  }
+  .card .icon{font-size:26px;margin-bottom:10px;display:block;}
+  .card h2{
+    font-family:'Anton', sans-serif;text-transform:uppercase;
+    font-size:19px;margin:0 0 6px;color:var(--navy);letter-spacing:.01em;
+  }
+  .card p{margin:0;font-size:13.5px;line-height:1.5;color:#4a4738;}
+  .soon-tag{
+    position:absolute;top:16px;right:16px;
+    font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.05em;text-transform:uppercase;
+    background:#d8d2bd;color:#6b6455;padding:3px 8px;border-radius:999px;
+  }
+
+  footer.foot{
+    text-align:center;color:rgba(255,255,255,.55);font-size:12px;margin-top:40px;
+    font-family:'JetBrains Mono',monospace;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <p class="eyebrow">Cockburn Lakes F.C.</p>
+    <h1 class="title">Warriors <span class="accent">Members</span> Hub</h1>
+    <p class="subtitle">Everything for the squad in one place — fines, fixtures, results, and the playing list.</p>
+  </header>
+
+  <div class="grid">
+    <a class="card" href="/fines.html">
+      <span class="icon">💸</span>
+      <h2>Fines Wall</h2>
+      <p>Nominate a teammate for a fine, see the weekly wall, and check the tally board.</p>
+    </a>
+
+    <a class="card disabled" href="#" aria-disabled="true">
+      <span class="soon-tag">Coming soon</span>
+      <span class="icon">📅</span>
+      <h2>Game Schedules</h2>
+      <p>Upcoming fixtures, training times, and venue details.</p>
+    </a>
+
+    <a class="card disabled" href="#" aria-disabled="true">
+      <span class="soon-tag">Coming soon</span>
+      <span class="icon">🏆</span>
+      <h2>Results</h2>
+      <p>Match results and the ladder, round by round.</p>
+    </a>
+
+    <a class="card disabled" href="#" aria-disabled="true">
+      <span class="soon-tag">Coming soon</span>
+      <span class="icon">👥</span>
+      <h2>Players</h2>
+      <p>The playing list, squad numbers, and player profiles.</p>
+    </a>
+
+    <a class="card" href="https://warriors-vote-v2.gcaporncontracting.workers.dev">
+      <span class="icon">🗳️</span>
+      <h2>Player Nominations</h2>
+      <p>Vote for best-on-ground and club award nominations each round.</p>
+    </a>
+  </div>
+
+  <footer class="foot">Cockburn Lakes F.C. Warriors — members hub.</footer>
+</div>
+</body>
+</html>
