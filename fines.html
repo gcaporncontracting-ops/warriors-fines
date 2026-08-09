@@ -967,52 +967,59 @@ function drawWheel(){
     ctx.stroke();
 
     const textColor = (bg === '#ffffff') ? '#132a6e' : '#ffffff';
-    const maxTextWidth = radius - 78;
-    const outerX = radius - 24;
+    const midAngle = start + slice / 2;
 
-    ctx.save();
-    ctx.translate(center, center);
-    ctx.rotate(start + slice / 2);
-    ctx.textAlign = 'right';
+    // Position the label at a representative point inside the wedge,
+    // but keep the text itself perfectly horizontal — it never rotates
+    // to follow the wedge's angle, no matter where on the wheel it sits.
+    const labelRadius = (hubRadius + radius) * 0.55;
+    const anchorX = center + Math.cos(midAngle) * labelRadius;
+    const anchorY = center + Math.sin(midAngle) * labelRadius;
+
+    // Available width at that point, based on the wedge's chord width —
+    // used to decide how many lines the text needs to wrap onto.
+    const chordWidth = 2 * labelRadius * Math.sin(slice / 2) * 0.86;
+
+    ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = textColor;
 
     if (bg !== '#ffffff'){
       ctx.shadowColor = 'rgba(0,0,0,.45)';
       ctx.shadowBlur = 3;
+    } else {
+      ctx.shadowBlur = 0;
     }
 
-    // Wrap onto up to 2 lines rather than shrinking-to-fit + ellipsis,
-    // shrinking font only if it still doesn't fit within the space
-    // available between the outer rim and the centre hub.
-    let fontSize = 19;
+    // Start large and readable, wrapping onto as many lines as it takes
+    // to fit — only shrinking the font if the block gets too tall.
+    let fontSize = 24;
     let lines = [];
 
-    while (fontSize >= 9){
+    while (fontSize >= 10){
       ctx.font = `bold ${fontSize}px 'Work Sans', Arial`;
-      lines = wrapWheelText(ctx, option, maxTextWidth);
+      lines = wrapWheelText(ctx, option, chordWidth);
 
-      const lineHeight = fontSize + 3;
+      const lineHeight = fontSize + 4;
       const blockHeight = lines.length * lineHeight;
       const maxLineWidth = Math.max(...lines.map(l => ctx.measureText(l).width));
-      const innerX = outerX - maxLineWidth;
 
-      const fitsWidth = lines.length <= 2 && maxLineWidth <= maxTextWidth;
-      const fitsHub = innerX > hubRadius + 6;
-      const fitsHeight = blockHeight <= (radius - hubRadius) * 0.9;
+      const fitsWidth = maxLineWidth <= chordWidth;
+      const fitsHeight = blockHeight <= radius * 0.62;
 
-      if (fitsWidth && fitsHub && fitsHeight) break;
+      if (fitsWidth && fitsHeight) break;
       fontSize -= 1;
     }
 
     ctx.font = `bold ${fontSize}px 'Work Sans', Arial`;
-    const lineHeight = fontSize + 3;
+    const lineHeight = fontSize + 4;
 
+    ctx.save();
+    ctx.translate(anchorX, anchorY);
     lines.forEach((line, idx) => {
       const yOffset = (idx - (lines.length - 1) / 2) * lineHeight;
-      ctx.fillText(line, outerX, yOffset);
+      ctx.fillText(line, 0, yOffset);
     });
-
     ctx.restore();
   });
 
