@@ -83,9 +83,8 @@
   .card.disabled{
     pointer-events:none;opacity:.6;filter:grayscale(.2);
   }
-  .card .icon{font-size:30px;margin-bottom:12px;display:block;filter:drop-shadow(0 0 6px currentColor);}
-  .card:nth-child(odd) .icon{color:var(--red);}
-  .card:nth-child(even) .icon{color:var(--blue);}
+  .card .icon-img{width:44px;height:auto;margin-bottom:12px;display:block;}
+
   .card h2{
     font-family:'Anton', sans-serif;text-transform:uppercase;
     font-size:19px;margin:0 0 6px;color:#fff;letter-spacing:.01em;
@@ -177,14 +176,14 @@
 
   <div class="grid">
     <a class="card" href="/fines.html">
-      <span class="icon">💸</span>
+      <img class="icon-img" src="/icon-fines.png" alt="">
       <span class="chevron-arrow">›</span>
       <h2>Fines Wall</h2>
       <p>Nominate a teammate for a fine, see the weekly wall, and check the tally board.</p>
     </a>
 
     <div class="card grade-picker" id="gradePickerCard">
-      <span class="icon">🗳️</span>
+      <img class="icon-img" src="/icon-vote.png" alt="">
       <span class="chevron chevron-arrow" id="gradeChevron">▾</span>
       <h2>Player's Player</h2>
       <p>Make your vote here.</p>
@@ -197,7 +196,7 @@
     </div>
 
     <div class="card grade-picker" id="fixturesPickerCard">
-      <span class="icon">📅</span>
+      <img class="icon-img" src="/icon-fixtures.png" alt="">
       <span class="chevron chevron-arrow" id="fixturesChevron">▾</span>
       <h2>Fixtures</h2>
       <p>Upcoming fixtures, training times, and venue details.</p>
@@ -210,7 +209,7 @@
     </div>
 
     <a class="card" href="https://www.playhq.com/afl/register/7be286" target="_blank" rel="noopener">
-      <span class="icon">📝</span>
+      <img class="icon-img" src="/icon-register.png" alt="">
       <span class="chevron-arrow">›</span>
       <h2>Players Register</h2>
       <p>Sign up or re-register for the season through PlayHQ.</p>
