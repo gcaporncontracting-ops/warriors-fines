@@ -33,49 +33,31 @@
   .wrap{max-width:920px;margin:0 auto;padding:0 20px 80px;}
   header.top{
     text-align:center;
-    padding:0 0 26px;
+    padding:26px 0 26px;
     color:#fff;
   }
   .hero-banner{
-    position:relative;
     width:100%;
-    max-width:460px;
+    max-width:420px;
     margin:0 auto;
     aspect-ratio:1/1;
     background-image:url('/crest.png');
     background-size:contain;
     background-repeat:no-repeat;
     background-position:center;
+    filter:drop-shadow(0 8px 20px rgba(0,0,0,.5));
   }
-  .hero-text{
-    position:absolute;
-    top:50%;left:50%;
-    transform:translate(-50%,-50%);
-    width:78%;
-  }
-  .eyebrow{
-    font-family:'JetBrains Mono', monospace;
-    letter-spacing:.22em;
-    text-transform:uppercase;
-    font-size:12px;
-    color:var(--gold);
-    margin:0 0 8px;
-    text-shadow: 0 2px 6px rgba(0,0,0,.9);
-  }
-  h1.title{
+  .tagline{
     font-family:'Anton', sans-serif;
     text-transform:uppercase;
-    font-weight:400;
-    font-size:clamp(22px,5vw,34px);
-    line-height:1.05;
-    margin:0;
-    letter-spacing:.01em;
+    font-size:clamp(18px,4vw,26px);
+    letter-spacing:.03em;
+    margin:14px 0 0;
     color:#fff;
-    text-shadow: 0 2px 4px rgba(0,0,0,.95), 0 0 18px rgba(0,0,0,.8);
   }
-  .title .accent{color:var(--gold);}
+  .tagline .accent{color:var(--gold);}
   .subtitle{
-    max-width:520px;margin:18px auto 0;
+    max-width:520px;margin:14px auto 0;
     font-size:15px;line-height:1.55;
     color:rgba(255,255,255,.82);
     padding:0 16px;
@@ -145,12 +127,8 @@
 <body>
 <div class="wrap">
   <header class="top">
-    <div class="hero-banner">
-      <div class="hero-text">
-        <p class="eyebrow">Cockburn Lakes FC</p>
-        <h1 class="title">Warriors <span class="accent">Members</span> Players Hub</h1>
-      </div>
-    </div>
+    <div class="hero-banner"></div>
+    <p class="tagline">Members <span class="accent">·</span> Players Hub</p>
     <p class="subtitle">Everything for the squad in one place — fines, fixtures, results, and the playing list.</p>
   </header>
 
@@ -160,19 +138,6 @@
       <h2>Fines Wall</h2>
       <p>Nominate a teammate for a fine, see the weekly wall, and check the tally board.</p>
     </a>
-
-    <div class="card grade-picker" id="fixturesPickerCard">
-      <span class="chevron" id="fixturesChevron">▾</span>
-      <span class="icon">📅</span>
-      <h2>Fixtures</h2>
-      <p>Upcoming fixtures, training times, and venue details.</p>
-      <div class="grade-options" id="fixturesOptions" hidden>
-        <a href="https://www.playhq.com/afl/org/perth-football-league/perth-football-league-2026/budget-car-and-truck-rental-b-grade-men/5d8b69aa" target="_blank" rel="noopener">League</a>
-        <a href="https://www.playhq.com/afl/org/perth-football-league/2026/budget-car-and-truck-rental-b-reserves-men/5d8a608a" target="_blank" rel="noopener">Reserves</a>
-        <a href="https://www.playhq.com/afl/org/perth-football-league/2026/egt-drew-banfield-colts/9c044820" target="_blank" rel="noopener">Colts</a>
-        <a href="https://www.playhq.com/afl/org/perth-football-league/2026/budget-car-and-truck-rental-e2-south-men/3bd3820f" target="_blank" rel="noopener">Thirds</a>
-      </div>
-    </div>
 
     <div class="card grade-picker" id="gradePickerCard">
       <span class="chevron" id="gradeChevron">▾</span>
@@ -184,6 +149,19 @@
         <a href="https://warriors-vote-v2.gcaporncontracting.workers.dev/vote/reserves">Reserves</a>
         <a href="https://warriors-vote-v2.gcaporncontracting.workers.dev/vote/colts">Colts</a>
         <a href="https://warriors-vote-v2.gcaporncontracting.workers.dev/vote/thirds">Thirds</a>
+      </div>
+    </div>
+
+    <div class="card grade-picker" id="fixturesPickerCard">
+      <span class="chevron" id="fixturesChevron">▾</span>
+      <span class="icon">📅</span>
+      <h2>Fixtures</h2>
+      <p>Upcoming fixtures, training times, and venue details.</p>
+      <div class="grade-options" id="fixturesOptions" hidden>
+        <a href="https://www.playhq.com/afl/org/perth-football-league/perth-football-league-2026/budget-car-and-truck-rental-b-grade-men/5d8b69aa" target="_blank" rel="noopener">League</a>
+        <a href="https://www.playhq.com/afl/org/perth-football-league/2026/budget-car-and-truck-rental-b-reserves-men/5d8a608a" target="_blank" rel="noopener">Reserves</a>
+        <a href="https://www.playhq.com/afl/org/perth-football-league/2026/egt-drew-banfield-colts/9c044820" target="_blank" rel="noopener">Colts</a>
+        <a href="https://www.playhq.com/afl/org/perth-football-league/2026/budget-car-and-truck-rental-e2-south-men/3bd3820f" target="_blank" rel="noopener">Thirds</a>
       </div>
     </div>
   </div>
