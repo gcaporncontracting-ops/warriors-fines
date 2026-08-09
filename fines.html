@@ -311,21 +311,6 @@
   #wheelResult{
     margin-top:18px;min-height:30px;text-align:center;
   }
-  .wheel-legend{
-    display:flex;flex-wrap:wrap;justify-content:center;gap:8px;
-    margin-top:18px;
-  }
-  .wheel-legend .chip{
-    font-family:'JetBrains Mono',monospace;font-size:11.5px;letter-spacing:.02em;
-    background:var(--paper-dim);color:var(--navy);
-    border:1.5px solid var(--line);border-radius:999px;
-    padding:6px 12px;
-  }
-  .wheel-legend-label{
-    text-align:center;font-family:'JetBrains Mono',monospace;font-size:10.5px;
-    letter-spacing:.06em;text-transform:uppercase;color:#8a8370;
-    margin:16px 0 0;
-  }
   .install-splash{
     position:fixed;inset:0;z-index:100;
     display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -478,9 +463,6 @@
           <img src="/crest.png" alt="">
         </div>
       </div>
-
-      <p class="wheel-legend-label">Possible outcomes</p>
-      <div class="wheel-legend" id="wheelLegend"></div>
 
       <div class="submit-row" style="justify-content:center;margin-top:20px;">
         <button type="button" class="primary" id="spinBtn">Spin the wheel</button>
@@ -936,11 +918,23 @@ document.getElementById('wheelAdminToggle').addEventListener('click', ()=>{
   requireAdmin(() => content.removeAttribute('hidden'));
 });
 
-function renderWheelLegend(){
-  const legend = document.getElementById('wheelLegend');
-  legend.innerHTML = wheelOptions.map(opt =>
-    `<span class="chip">${escapeHtml(opt)}</span>`
-  ).join('');
+function wrapWheelText(ctx, text, maxWidth){
+  const words = text.split(' ');
+  const lines = [];
+  let current = '';
+
+  for (const word of words){
+    const test = current ? current + ' ' + word : word;
+    if (!current || ctx.measureText(test).width <= maxWidth){
+      current = test;
+    } else {
+      lines.push(current);
+      current = word;
+    }
+  }
+
+  if (current) lines.push(current);
+  return lines;
 }
 
 function drawWheel(){
@@ -951,6 +945,7 @@ function drawWheel(){
   canvas.height = size;
   const center = size / 2;
   const radius = size / 2 - 4;
+  const hubRadius = 46;
 
   ctx.clearRect(0, 0, size, size);
 
@@ -973,6 +968,7 @@ function drawWheel(){
 
     const textColor = (bg === '#ffffff') ? '#132a6e' : '#ffffff';
     const maxTextWidth = radius - 78;
+    const outerX = radius - 24;
 
     ctx.save();
     ctx.translate(center, center);
@@ -981,33 +977,47 @@ function drawWheel(){
     ctx.textBaseline = 'middle';
     ctx.fillStyle = textColor;
 
-    let fontSize = 21;
-    let text = option;
-    ctx.font = `bold ${fontSize}px 'Work Sans', Arial`;
-
-    while (fontSize > 10 && ctx.measureText(text).width > maxTextWidth){
-      fontSize -= 1;
-      ctx.font = `bold ${fontSize}px 'Work Sans', Arial`;
-    }
-
-    if (ctx.measureText(text).width > maxTextWidth){
-      while (text.length > 3 && ctx.measureText(text + '…').width > maxTextWidth){
-        text = text.slice(0, -1);
-      }
-      text = text.slice(0, -1) + '…';
-    }
-
     if (bg !== '#ffffff'){
       ctx.shadowColor = 'rgba(0,0,0,.45)';
       ctx.shadowBlur = 3;
     }
 
-    ctx.fillText(text, radius - 24, 0);
+    // Wrap onto up to 2 lines rather than shrinking-to-fit + ellipsis,
+    // shrinking font only if it still doesn't fit within the space
+    // available between the outer rim and the centre hub.
+    let fontSize = 19;
+    let lines = [];
+
+    while (fontSize >= 9){
+      ctx.font = `bold ${fontSize}px 'Work Sans', Arial`;
+      lines = wrapWheelText(ctx, option, maxTextWidth);
+
+      const lineHeight = fontSize + 3;
+      const blockHeight = lines.length * lineHeight;
+      const maxLineWidth = Math.max(...lines.map(l => ctx.measureText(l).width));
+      const innerX = outerX - maxLineWidth;
+
+      const fitsWidth = lines.length <= 2 && maxLineWidth <= maxTextWidth;
+      const fitsHub = innerX > hubRadius + 6;
+      const fitsHeight = blockHeight <= (radius - hubRadius) * 0.9;
+
+      if (fitsWidth && fitsHub && fitsHeight) break;
+      fontSize -= 1;
+    }
+
+    ctx.font = `bold ${fontSize}px 'Work Sans', Arial`;
+    const lineHeight = fontSize + 3;
+
+    lines.forEach((line, idx) => {
+      const yOffset = (idx - (lines.length - 1) / 2) * lineHeight;
+      ctx.fillText(line, outerX, yOffset);
+    });
+
     ctx.restore();
   });
 
   ctx.beginPath();
-  ctx.arc(center, center, 46, 0, Math.PI * 2);
+  ctx.arc(center, center, hubRadius, 0, Math.PI * 2);
   ctx.fillStyle = '#ffffff';
   ctx.fill();
   ctx.strokeStyle = '#132a6e';
@@ -1065,7 +1075,6 @@ async function initWheel(){
 
   wheelOptions = await loadWheelOptions();
   document.getElementById('wheelEditArea').value = wheelOptions.join('\n');
-  renderWheelLegend();
   drawWheel();
 }
 
@@ -1081,7 +1090,6 @@ document.getElementById('saveWheelOptions').addEventListener('click', async ()=>
   try{
     await saveWheelOptions(lines);
     drawWheel();
-    renderWheelLegend();
     status.textContent = 'Saved for everyone.';
     status.className = 'form-status ok';
   }catch(e){
