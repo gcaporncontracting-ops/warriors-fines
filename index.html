@@ -33,19 +33,20 @@
   .wrap{max-width:920px;margin:0 auto;padding:0 20px 80px;}
   header.top{
     text-align:center;
-    padding:26px 0 26px;
+    padding:10px 0 20px;
     color:#fff;
   }
   .hero-banner{
     width:100%;
-    max-width:420px;
+    max-width:520px;
     margin:0 auto;
     aspect-ratio:1/1;
-    background-image:url('/crest.png');
-    background-size:contain;
-    background-repeat:no-repeat;
-    background-position:center;
-    filter:drop-shadow(0 8px 20px rgba(0,0,0,.5));
+    background-image:
+      linear-gradient(rgba(11,28,77,.55), rgba(11,28,77,.55)),
+      url('/crest.png');
+    background-size: cover, contain;
+    background-repeat: no-repeat, no-repeat;
+    background-position: center, center;
   }
   .tagline{
     font-family:'Anton', sans-serif;
