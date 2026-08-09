@@ -32,7 +32,7 @@
     background-color:var(--navy-deep);
     background-image:
       linear-gradient(180deg, rgba(11,28,77,.94) 0%, rgba(11,28,77,.90) 40%, rgba(11,28,77,.96) 100%),
-      url('/logo.png');
+      url('/crest.png');
     background-repeat:no-repeat;
     background-position: top center, center 120px;
     background-size: cover, 720px;
@@ -293,23 +293,9 @@
     z-index:5;
     filter:drop-shadow(0 3px 3px rgba(0,0,0,.4));
   }
-  .wheel-wrap .center-head{
-    position:absolute;top:50%;left:50%;
-    transform:translate(-50%,-50%);
-    width:26%;height:26%;
-    border-radius:50%;
-    background:#0b1c4d;
-    box-shadow:0 0 0 4px #ffffff, 0 4px 10px rgba(0,0,0,.45);
-    z-index:6;
-    overflow:hidden;
-    display:flex;align-items:center;justify-content:center;
-    pointer-events:none;
-  }
-  .wheel-wrap .center-head img{
-    width:150%;height:150%;object-fit:cover;object-position:38% 45%;
-  }
   #wheelResult{
     margin-top:18px;min-height:30px;text-align:center;
+  }
   .install-splash{
     position:fixed;inset:0;z-index:100;
     display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -374,17 +360,17 @@
 
       <form id="nomForm" novalidate>
         <label for="nominee">Who's copping the fine? <span class="req">*</span></label>
-        <input type="text" id="nominee" maxlength="60" placeholder="e.g. Macca" required>
+        <input type="text" id="nominee" maxlength="60" placeholder="e.g. One Nut" required>
 
         <label for="reason">What did they do? <span class="req">*</span>
           <span class="hint">This is what gets posted on the wall — make it count.</span>
         </label>
-        <textarea id="reason" maxlength="240" placeholder="e.g. Turned up to training in the wrong boots... again." required></textarea>
+        <textarea id="reason" maxlength="240" placeholder="e.g. for being one nut" required></textarea>
 
         <label for="nominator">Your name <span class="req">*</span>
           <span class="hint">Recorded privately for the club — never shown on the wall or tally board.</span>
         </label>
-        <input type="text" id="nominator" maxlength="60" placeholder="e.g. Jonesy" required>
+        <input type="text" id="nominator" maxlength="60" placeholder="e.g. Seldo" required>
 
         <div class="privacy-note">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8a8370" stroke-width="2"><path d="M12 2 4 6v6c0 5 4 8 8 10 4-2 8-5 8-10V6l-8-4Z"/></svg>
@@ -458,9 +444,6 @@
       <div class="wheel-wrap">
         <div class="pointer"></div>
         <canvas id="wheelCanvas"></canvas>
-        <div class="center-head">
-          <img src="/crest.png" alt="">
-        </div>
       </div>
 
       <div class="submit-row" style="justify-content:center;margin-top:20px;">
@@ -873,7 +856,7 @@ document.getElementById('savePayInfo').addEventListener('click', async ()=>{
   renderPayMethods();
 });
 
-// ---------- spin wheel ----------
+// ---------- spin wheel (digit-art crest edition) ----------
 const WHEEL_KEY = 'wheel_options';
 const defaultWheelOptions = [
   'Shout a round',
@@ -885,11 +868,9 @@ const defaultWheelOptions = [
   'Bring snacks next training',
   'Front seat on the bus',
 ];
-const wheelSliceColors = ['#132a6e', '#d62828', '#1d4fd8', '#0b1c4d'];
 
 let wheelOptions = defaultWheelOptions.slice();
 let wheelInitDone = false;
-let wheelRotation = 0;
 let wheelSpinning = false;
 
 async function loadWheelOptions(){
@@ -907,15 +888,6 @@ async function saveWheelOptions(list){
   });
 }
 
-async function initWheel(){
-  if(!wheelInitDone){
-    wheelOptions = await loadWheelOptions();
-    document.getElementById('wheelEditArea').value = wheelOptions.join('\n');
-    drawWheel();
-    wheelInitDone = true;
-  }
-}
-
 document.getElementById('wheelAdminToggle').addEventListener('click', ()=>{
   const content = document.getElementById('wheelAdminContent');
   if(!content.hasAttribute('hidden')){
@@ -925,97 +897,223 @@ document.getElementById('wheelAdminToggle').addEventListener('click', ()=>{
   requireAdmin(() => content.removeAttribute('hidden'));
 });
 
-function drawWheel(){
-  const canvas = document.getElementById('wheelCanvas');
-  const ctx = canvas.getContext('2d');
-  const size = 600;
-  canvas.width = size;
-  canvas.height = size;
-  const center = size / 2;
-  const radius = size / 2;
+/* ---- canvas / geometry ---- */
 
-  ctx.clearRect(0, 0, size, size);
-  const slice = (Math.PI * 2) / wheelOptions.length;
+const WHEEL_SIZE = 900;
+const WHEEL_CENTER = WHEEL_SIZE / 2;
+const WHEEL_RADIUS = WHEEL_CENTER - 8;
 
-  wheelOptions.forEach((option, i) => {
-    const start = i * slice;
-    const end = start + slice;
+let wheelRotation = 0;
 
-    ctx.beginPath();
-    ctx.moveTo(center, center);
-    ctx.arc(center, center, radius, start, end);
-    ctx.closePath();
-    ctx.fillStyle = wheelSliceColors[i % wheelSliceColors.length];
-    ctx.fill();
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 4;
-    ctx.stroke();
+/* ---- digit particle field ---- */
 
-    ctx.save();
-    ctx.translate(center, center);
-    ctx.rotate(start + slice / 2);
-    ctx.textAlign = 'right';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = '#ffffff';
-    ctx.font = "bold 22px 'Work Sans', Arial";
-    ctx.shadowColor = 'rgba(0,0,0,0.5)';
-    ctx.shadowBlur = 4;
-    ctx.fillText(option, radius - 22, 0);
-    ctx.restore();
-  });
+const wheelDigits = '0123456789';
+let wheelParticles = [];
 
-  ctx.beginPath();
-  ctx.arc(center, center, 42, 0, Math.PI * 2);
-  ctx.fillStyle = '#ffffff';
-  ctx.fill();
-  ctx.strokeStyle = '#132a6e';
-  ctx.lineWidth = 5;
-  ctx.stroke();
+function createWheelParticles(){
+  wheelParticles = [];
+  for (let r = 20; r < WHEEL_RADIUS; r += 4) {
+    const count = Math.floor((Math.PI * 2 * r) / 8.5);
+    for (let i = 0; i < count; i++) {
+      const angle = (i / count) * Math.PI * 2;
+      wheelParticles.push({
+        radius: r,
+        angle: angle,
+        character: wheelDigits[Math.floor(Math.random() * wheelDigits.length)]
+      });
+    }
+  }
 }
 
+/* ---- real crest sampling (same technique as the standalone wheel) ---- */
+
+const WHEEL_LOGO_GRID = 160;
+const WHEEL_LOGO_DRAW_SIZE = 640;
+const WHEEL_ALPHA_THRESHOLD = 40;
+
+let wheelLogoData = null;
+let wheelLogoReady = false;
+
+const wheelLogoImg = new Image();
+
+function sampleWheelLogo(){
+  const sampleCanvas = document.createElement('canvas');
+  sampleCanvas.width = WHEEL_LOGO_GRID;
+  sampleCanvas.height = WHEEL_LOGO_GRID;
+  const sampleCtx = sampleCanvas.getContext('2d');
+  sampleCtx.drawImage(wheelLogoImg, 0, 0, WHEEL_LOGO_GRID, WHEEL_LOGO_GRID);
+  wheelLogoData = sampleCtx.getImageData(0, 0, WHEEL_LOGO_GRID, WHEEL_LOGO_GRID).data;
+  wheelLogoReady = true;
+}
+
+function boostWheelColour(r, g, b){
+  const max = Math.max(r, g, b);
+  if (max < 30) return [60, 60, 60];
+  const scale = 255 / max;
+  return [
+    Math.round(Math.min(255, r * scale * 1.15)),
+    Math.round(Math.min(255, g * scale * 1.15)),
+    Math.round(Math.min(255, b * scale * 1.15))
+  ];
+}
+
+function getWheelLogoColour(x, y){
+  if (!wheelLogoReady) return null;
+  const half = WHEEL_LOGO_DRAW_SIZE / 2;
+  const localX = x - (WHEEL_CENTER - half);
+  const localY = y - (WHEEL_CENTER - half);
+  if (localX < 0 || localY < 0 || localX >= WHEEL_LOGO_DRAW_SIZE || localY >= WHEEL_LOGO_DRAW_SIZE) return null;
+  const gx = Math.floor((localX / WHEEL_LOGO_DRAW_SIZE) * WHEEL_LOGO_GRID);
+  const gy = Math.floor((localY / WHEEL_LOGO_DRAW_SIZE) * WHEEL_LOGO_GRID);
+  const idx = (gy * WHEEL_LOGO_GRID + gx) * 4;
+  const a = wheelLogoData[idx + 3];
+  if (a < WHEEL_ALPHA_THRESHOLD) return null;
+  return boostWheelColour(wheelLogoData[idx], wheelLogoData[idx + 1], wheelLogoData[idx + 2]);
+}
+
+function loadWheelLogoImage(){
+  return new Promise((resolve) => {
+    const finish = () => { sampleWheelLogo(); resolve(); };
+    wheelLogoImg.onload = finish;
+    wheelLogoImg.onerror = () => { console.error('Could not load /crest.png for the wheel'); resolve(); };
+    wheelLogoImg.src = '/crest.png';
+    if (wheelLogoImg.complete && wheelLogoImg.naturalWidth > 0) finish();
+  });
+}
+
+/* ---- drawing ---- */
+
+function drawWheel(now, reveal){
+  reveal = reveal || 0;
+  const canvas = document.getElementById('wheelCanvas');
+  const ctx = canvas.getContext('2d');
+
+  canvas.width = WHEEL_SIZE;
+  canvas.height = WHEEL_SIZE;
+
+  ctx.clearRect(0, 0, WHEEL_SIZE, WHEEL_SIZE);
+
+  ctx.beginPath();
+  ctx.arc(WHEEL_CENTER, WHEEL_CENTER, WHEEL_RADIUS, 0, Math.PI * 2);
+  ctx.fillStyle = '#020304';
+  ctx.fill();
+
+  ctx.font = 'bold 11px monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  for (const p of wheelParticles){
+    const angle = p.angle + wheelRotation;
+    const x = WHEEL_CENTER + Math.cos(angle) * p.radius;
+    const y = WHEEL_CENTER + Math.sin(angle) * p.radius;
+
+    const logoColour = getWheelLogoColour(x, y);
+
+    let colour = 'rgba(150,160,175,.38)';
+
+    if (reveal > 0){
+      if (logoColour){
+        const a = .38 + reveal * .58;
+        colour = `rgba(${logoColour[0]},${logoColour[1]},${logoColour[2]},${a})`;
+      } else {
+        colour = `rgba(90,98,112,${.32 - reveal * .2})`;
+      }
+    }
+
+    ctx.fillStyle = colour;
+    ctx.fillText(p.character, x, y);
+  }
+
+  // Thin segment divider lines so the number of punishments is still visible
+  const segmentAngle = (Math.PI * 2) / Math.max(wheelOptions.length, 1);
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = 'rgba(20,120,255,.4)';
+  for (let i = 0; i < wheelOptions.length; i++){
+    const angle = -Math.PI / 2 + i * segmentAngle + wheelRotation;
+    const x = WHEEL_CENTER + Math.cos(angle) * WHEEL_RADIUS;
+    const y = WHEEL_CENTER + Math.sin(angle) * WHEEL_RADIUS;
+    ctx.beginPath();
+    ctx.moveTo(WHEEL_CENTER, WHEEL_CENTER);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  }
+}
+
+/* ---- spin ---- */
+
 function spinWheel(){
-  if(wheelSpinning || wheelOptions.length < 2) return;
+  if (wheelSpinning || wheelOptions.length < 2) return;
   wheelSpinning = true;
+
   const spinBtn = document.getElementById('spinBtn');
   spinBtn.disabled = true;
   document.getElementById('wheelResult').textContent = '';
 
-  const extraRotations = 5 + Math.floor(Math.random() * 4);
-  const randomAngle = Math.random() * 360;
-  const startRotation = wheelRotation;
-  const targetRotation = wheelRotation + extraRotations * 360 + randomAngle;
-  const duration = 5000 + Math.random() * 1500;
-  const startTime = performance.now();
-  const canvas = document.getElementById('wheelCanvas');
+  const winner = Math.floor(Math.random() * wheelOptions.length);
+  const segmentAngle = (Math.PI * 2) / wheelOptions.length;
+  const targetAngle = -Math.PI / 2 + (winner + .5) * segmentAngle;
 
-  function animate(currentTime){
-    const elapsed = currentTime - startTime;
+  const rotations = 10 + Math.floor(Math.random() * 4);
+  const current = wheelRotation;
+  const finalRotation = current + rotations * Math.PI * 2 + (-targetAngle);
+
+  const start = performance.now();
+  const duration = 8000;
+
+  function animate(time){
+    const elapsed = time - start;
     const progress = Math.min(elapsed / duration, 1);
-    const ease = 1 - Math.pow(1 - progress, 4);
-    wheelRotation = startRotation + (targetRotation - startRotation) * ease;
-    canvas.style.transform = `rotate(${wheelRotation}deg)`;
-    if(progress < 1){
+    const eased = 1 - Math.pow(1 - progress, 4);
+    wheelRotation = current + (finalRotation - current) * eased;
+
+    let reveal;
+    if (progress < .12) reveal = progress / .12;
+    else if (progress > .86) reveal = (1 - progress) / .14;
+    else reveal = 1;
+
+    drawWheel(time, reveal);
+
+    if (progress < 1){
       requestAnimationFrame(animate);
-    }else{
-      finishSpin();
+    } else {
+      wheelSpinning = false;
+      spinBtn.disabled = false;
+      wheelRotation = finalRotation;
+      drawWheel(time, 0);
+      document.getElementById('wheelResult').innerHTML = `🏆 ${escapeHtml(wheelOptions[winner])}`;
     }
   }
+
   requestAnimationFrame(animate);
 }
 
-function finishSpin(){
-  wheelSpinning = false;
-  document.getElementById('spinBtn').disabled = false;
-  let finalAngle = wheelRotation % 360;
-  if(finalAngle < 0) finalAngle += 360;
-  const sectionSize = 360 / wheelOptions.length;
-  const pointerAngle = (360 - finalAngle + 270) % 360;
-  const winnerIndex = Math.floor(pointerAngle / sectionSize);
-  const winner = wheelOptions[winnerIndex];
-  document.getElementById('wheelResult').innerHTML = `🏆 ${escapeHtml(winner)}`;
-}
-
 document.getElementById('spinBtn').addEventListener('click', spinWheel);
+
+async function initWheel(){
+  if (wheelInitDone) return;
+  wheelInitDone = true;
+
+  const spinBtn = document.getElementById('spinBtn');
+  const originalLabel = spinBtn.textContent;
+  spinBtn.disabled = true;
+  spinBtn.textContent = 'Loading crest...';
+
+  createWheelParticles();
+  drawWheel(performance.now(), 0);
+
+  const [options] = await Promise.all([
+    loadWheelOptions(),
+    loadWheelLogoImage()
+  ]);
+
+  wheelOptions = options;
+  document.getElementById('wheelEditArea').value = wheelOptions.join('\n');
+
+  spinBtn.disabled = false;
+  spinBtn.textContent = originalLabel;
+
+  drawWheel(performance.now(), 0);
+}
 
 document.getElementById('saveWheelOptions').addEventListener('click', async ()=>{
   const lines = document.getElementById('wheelEditArea').value.split('\n').map(l=>l.trim()).filter(Boolean);
@@ -1028,7 +1126,7 @@ document.getElementById('saveWheelOptions').addEventListener('click', async ()=>
   wheelOptions = lines;
   try{
     await saveWheelOptions(lines);
-    drawWheel();
+    drawWheel(performance.now(), 0);
     status.textContent = 'Saved for everyone.';
     status.className = 'form-status ok';
   }catch(e){
