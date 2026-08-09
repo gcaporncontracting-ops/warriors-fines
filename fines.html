@@ -293,6 +293,21 @@
     z-index:5;
     filter:drop-shadow(0 3px 3px rgba(0,0,0,.4));
   }
+  .wheel-wrap .center-head{
+    position:absolute;top:50%;left:50%;
+    transform:translate(-50%,-50%);
+    width:26%;height:26%;
+    border-radius:50%;
+    background:#0b1c4d;
+    box-shadow:0 0 0 4px #ffffff, 0 4px 10px rgba(0,0,0,.45);
+    z-index:6;
+    overflow:hidden;
+    display:flex;align-items:center;justify-content:center;
+    pointer-events:none;
+  }
+  .wheel-wrap .center-head img{
+    width:150%;height:150%;object-fit:cover;object-position:38% 45%;
+  }
   #wheelResult{
     margin-top:18px;min-height:30px;text-align:center;
   .install-splash{
@@ -340,7 +355,7 @@
     <a href="/" class="home-link">← Home</a>
     <p class="eyebrow">Cockburn Lakes F.C.</p>
     <h1 class="title">Warriors <span class="accent">Fines</span> Wall</h1>
-    <p class="subtitle">Nominate a teammate for a fine-worthy moment. Nominations are posted straight to the wall — 50m penalties and any card = spin the wheel. Every fine is $2, tallied weekly.</p>
+    <p class="subtitle">Nominate a teammate for a fine-worthy moment. Nominations are posted straight to the wall — your name stays off it, theirs doesn't. Every fine is $2, tallied weekly.</p>
   </header>
 
   <nav class="tabs" role="tablist" aria-label="Fines wall sections">
@@ -359,17 +374,17 @@
 
       <form id="nomForm" novalidate>
         <label for="nominee">Who's copping the fine? <span class="req">*</span></label>
-        <input type="text" id="nominee" maxlength="60" placeholder="e.g. one nut" required>
+        <input type="text" id="nominee" maxlength="60" placeholder="e.g. Macca" required>
 
         <label for="reason">What did they do? <span class="req">*</span>
           <span class="hint">This is what gets posted on the wall — make it count.</span>
         </label>
-        <textarea id="reason" maxlength="240" placeholder="e.g. for being himself." required></textarea>
+        <textarea id="reason" maxlength="240" placeholder="e.g. Turned up to training in the wrong boots... again." required></textarea>
 
         <label for="nominator">Your name <span class="req">*</span>
           <span class="hint">Recorded privately for the club — never shown on the wall or tally board.</span>
         </label>
-        <input type="text" id="nominator" maxlength="60" placeholder="e.g. Seldo" required>
+        <input type="text" id="nominator" maxlength="60" placeholder="e.g. Jonesy" required>
 
         <div class="privacy-note">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8a8370" stroke-width="2"><path d="M12 2 4 6v6c0 5 4 8 8 10 4-2 8-5 8-10V6l-8-4Z"/></svg>
@@ -438,11 +453,14 @@
   <section class="panel" id="panel-wheel">
     <div class="card-surface">
       <h2 class="form-title" style="margin:0 0 4px;">Spin for punishment</h2>
-      <p class="form-sub">50m penalties and any card = spin the wheel. Edit the list below to set your own punishments.</p>
+      <p class="form-sub">Can't agree on a fine? Let the wheel decide. Edit the list below to set your own punishments.</p>
 
       <div class="wheel-wrap">
         <div class="pointer"></div>
         <canvas id="wheelCanvas"></canvas>
+        <div class="center-head">
+          <img src="/crest.png" alt="">
+        </div>
       </div>
 
       <div class="submit-row" style="justify-content:center;margin-top:20px;">
@@ -867,7 +885,7 @@ const defaultWheelOptions = [
   'Bring snacks next training',
   'Front seat on the bus',
 ];
-const wheelSliceColors = ['#d62828', '#ffffff', '#1d4fd8'];
+const wheelSliceColors = ['#132a6e', '#d62828', '#1d4fd8', '#0b1c4d'];
 
 let wheelOptions = defaultWheelOptions.slice();
 let wheelInitDone = false;
@@ -938,7 +956,7 @@ function drawWheel(){
     ctx.rotate(start + slice / 2);
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = '#000000';
+    ctx.fillStyle = '#ffffff';
     ctx.font = "bold 22px 'Work Sans', Arial";
     ctx.shadowColor = 'rgba(0,0,0,0.5)';
     ctx.shadowBlur = 4;
