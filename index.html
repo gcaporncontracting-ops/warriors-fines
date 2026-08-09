@@ -95,16 +95,15 @@
     background:#d8d2bd;color:#6b6455;padding:3px 8px;border-radius:999px;
   }
 
-  .card.grade-picker{border-bottom-color:var(--gold);}
-  .grade-toggle{
-    margin-top:12px;
-    font-family:'JetBrains Mono',monospace;font-size:12.5px;letter-spacing:.03em;text-transform:uppercase;
-    background:var(--navy);color:#fff;border:none;border-radius:7px;
-    padding:9px 14px;cursor:pointer;width:100%;text-align:left;
+  .card.grade-picker{border-bottom-color:var(--gold);cursor:pointer;position:relative;}
+  .card.grade-picker .chevron{
+    position:absolute;top:16px;right:16px;
+    font-size:15px;color:var(--navy);opacity:.55;
+    transition:transform .15s;
   }
-  .grade-toggle:hover{background:var(--navy-deep);}
+  .card.grade-picker.open .chevron{transform:rotate(180deg);}
   .grade-options{
-    display:flex;flex-direction:column;gap:6px;margin-top:10px;
+    display:flex;flex-direction:column;gap:6px;margin-top:14px;
   }
   .grade-options a{
     display:block;text-decoration:none;
@@ -137,10 +136,10 @@
     </a>
 
     <div class="card grade-picker" id="fixturesPickerCard">
+      <span class="chevron" id="fixturesChevron">▾</span>
       <span class="icon">📅</span>
       <h2>Game Schedules</h2>
       <p>Upcoming fixtures, training times, and venue details.</p>
-      <button type="button" class="grade-toggle" id="fixturesToggle">Choose your grade ▾</button>
       <div class="grade-options" id="fixturesOptions" hidden>
         <a href="https://www.playhq.com/afl/org/perth-football-league/perth-football-league-2026/budget-car-and-truck-rental-b-grade-men/5d8b69aa" target="_blank" rel="noopener">League</a>
         <a href="https://www.playhq.com/afl/org/perth-football-league/2026/budget-car-and-truck-rental-b-reserves-men/5d8a608a" target="_blank" rel="noopener">Reserves</a>
@@ -164,10 +163,10 @@
     </a>
 
     <div class="card grade-picker" id="gradePickerCard">
+      <span class="chevron" id="gradeChevron">▾</span>
       <span class="icon">🗳️</span>
       <h2>Player Nominations</h2>
       <p>Vote for best-on-ground and club award nominations each round.</p>
-      <button type="button" class="grade-toggle" id="gradeToggle">Choose your grade ▾</button>
       <div class="grade-options" id="gradeOptions" hidden>
         <a href="https://warriors-vote-v2.gcaporncontracting.workers.dev/vote/league">League</a>
         <a href="https://warriors-vote-v2.gcaporncontracting.workers.dev/vote/reserves">Reserves</a>
@@ -181,32 +180,27 @@
 </div>
 
 <script>
-  const gradeToggle = document.getElementById('gradeToggle');
-  const gradeOptions = document.getElementById('gradeOptions');
-  gradeToggle.addEventListener('click', () => {
-    const isHidden = gradeOptions.hasAttribute('hidden');
-    if (isHidden) {
-      gradeOptions.removeAttribute('hidden');
-      gradeToggle.textContent = 'Choose your grade ▴';
-    } else {
-      gradeOptions.setAttribute('hidden', '');
-      gradeToggle.textContent = 'Choose your grade ▾';
-    }
-  });
+  // Reusable pattern: tap anywhere on a .grade-picker card to expand/collapse
+  // its options, unless the tap was on one of the option links themselves.
+  function setupGradePicker(cardId, optionsId, chevronId){
+    const card = document.getElementById(cardId);
+    const options = document.getElementById(optionsId);
+    const chevron = document.getElementById(chevronId);
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('a')) return; // let the link navigate normally
+      const isHidden = options.hasAttribute('hidden');
+      if (isHidden) {
+        options.removeAttribute('hidden');
+        card.classList.add('open');
+      } else {
+        options.setAttribute('hidden', '');
+        card.classList.remove('open');
+      }
+    });
+  }
 
-  const fixturesToggle = document.getElementById('fixturesToggle');
-  const fixturesOptions = document.getElementById('fixturesOptions');
-  fixturesToggle.addEventListener('click', () => {
-    const isHidden = fixturesOptions.hasAttribute('hidden');
-    if (isHidden) {
-      fixturesOptions.removeAttribute('hidden');
-      fixturesToggle.textContent = 'Choose your grade ▴';
-    } else {
-      fixturesOptions.setAttribute('hidden', '');
-      fixturesToggle.textContent = 'Choose your grade ▾';
-    }
-  });
+  setupGradePicker('fixturesPickerCard', 'fixturesOptions', 'fixturesChevron');
+  setupGradePicker('gradePickerCard', 'gradeOptions', 'gradeChevron');
 </script>
 </body>
 </html>
-
