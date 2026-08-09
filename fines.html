@@ -238,7 +238,11 @@
   .method p{margin:0;font-size:13.5px;color:#3a3830;line-height:1.5;}
   .method .mono{font-family:'JetBrains Mono',monospace;font-size:13px;background:var(--paper-dim);padding:6px 8px;border-radius:6px;display:inline-block;margin-top:6px;}
   .admin-edit{margin-top:20px;border-top:1px dashed var(--line);padding-top:16px;}
-  .admin-edit summary{cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:12px;text-transform:uppercase;color:#8a8370;}
+  .admin-toggle{
+    cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:12px;text-transform:uppercase;
+    color:#8a8370;background:none;border:none;padding:0;letter-spacing:.04em;
+  }
+  .admin-toggle:hover{color:var(--navy);}
   .admin-edit textarea{margin-top:10px;min-height:140px;font-family:'JetBrains Mono',monospace;font-size:13px;}
 
   /* ---------- record payment modal ---------- */
@@ -378,14 +382,16 @@
       <p class="form-sub">Settle your balance any way that's easiest — then let the treasurer know so it can be marked paid on the tally board.</p>
       <div class="pay-methods" id="payMethods"></div>
 
-      <details class="admin-edit">
-        <summary>Treasurer: edit payment details</summary>
-        <textarea id="payEditArea" placeholder="One method per line, format: Title | Detail line"></textarea>
-        <div class="submit-row">
-          <button type="button" class="primary" id="savePayInfo" style="box-shadow:0 6px 0 #0d5c2b;background:#1c7a3d;">Save payment info</button>
-          <span class="form-status" id="payStatus"></span>
+      <div class="admin-edit">
+        <button type="button" class="admin-toggle" id="payAdminToggle">🔒 Treasurer: edit payment details</button>
+        <div id="payAdminContent" hidden>
+          <textarea id="payEditArea" placeholder="One method per line, format: Title | Detail line"></textarea>
+          <div class="submit-row">
+            <button type="button" class="primary" id="savePayInfo" style="box-shadow:0 6px 0 #0d5c2b;background:#1c7a3d;">Save payment info</button>
+            <span class="form-status" id="payStatus"></span>
+          </div>
         </div>
-      </details>
+      </div>
     </div>
   </section>
 
@@ -405,14 +411,16 @@
       </div>
       <div id="wheelResult"></div>
 
-      <details class="admin-edit">
-        <summary>Edit the punishment list</summary>
-        <textarea id="wheelEditArea" placeholder="One punishment per line"></textarea>
-        <div class="submit-row">
-          <button type="button" class="primary" id="saveWheelOptions" style="box-shadow:0 6px 0 #0d5c2b;background:#1c7a3d;">Save list</button>
-          <span class="form-status" id="wheelStatus"></span>
+      <div class="admin-edit">
+        <button type="button" class="admin-toggle" id="wheelAdminToggle">🔒 Edit the punishment list</button>
+        <div id="wheelAdminContent" hidden>
+          <textarea id="wheelEditArea" placeholder="One punishment per line"></textarea>
+          <div class="submit-row">
+            <button type="button" class="primary" id="saveWheelOptions" style="box-shadow:0 6px 0 #0d5c2b;background:#1c7a3d;">Save list</button>
+            <span class="form-status" id="wheelStatus"></span>
+          </div>
         </div>
-      </details>
+      </div>
     </div>
   </section>
 
@@ -435,8 +443,74 @@
   </div>
 </div>
 
+<!-- Admin passcode modal -->
+<div class="modal-overlay" id="adminModalOverlay">
+  <div class="modal">
+    <h3>Committee access</h3>
+    <p class="sub">Enter the club passcode to make changes here.</p>
+    <label for="adminPassInput">Passcode</label>
+    <input type="password" id="adminPassInput" placeholder="••••••••">
+    <p class="form-status err" id="adminPassStatus" style="margin-top:8px;"></p>
+    <div class="modal-actions">
+      <button class="ghost" id="adminModalCancel">Cancel</button>
+      <button class="primary" id="adminModalConfirm">Unlock</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const FINE_AMOUNT = 2;
+
+// ---------- admin gate ----------
+// Simple shared passcode so casual visitors can't edit sensitive stuff.
+// This is NOT strong security (the code is visible in the page source) —
+// it's just a speed bump for committee-only actions. Change the passcode
+// below whenever you like; no redeploy steps beyond editing this file.
+const ADMIN_PASSCODE = 'warriors2027';
+
+let pendingAdminAction = null;
+
+function isAdminUnlocked(){
+  return sessionStorage.getItem('adminUnlocked') === 'yes';
+}
+
+function requireAdmin(onSuccess){
+  if(isAdminUnlocked()){
+    onSuccess();
+    return;
+  }
+  pendingAdminAction = onSuccess;
+  document.getElementById('adminPassInput').value = '';
+  document.getElementById('adminPassStatus').textContent = '';
+  document.getElementById('adminModalOverlay').classList.add('show');
+  document.getElementById('adminPassInput').focus();
+}
+
+document.getElementById('adminModalCancel').addEventListener('click', ()=>{
+  document.getElementById('adminModalOverlay').classList.remove('show');
+  pendingAdminAction = null;
+});
+document.getElementById('adminModalOverlay').addEventListener('click', (e)=>{
+  if(e.target.id === 'adminModalOverlay'){
+    document.getElementById('adminModalOverlay').classList.remove('show');
+    pendingAdminAction = null;
+  }
+});
+document.getElementById('adminModalConfirm').addEventListener('click', ()=>{
+  const entered = document.getElementById('adminPassInput').value;
+  if(entered === ADMIN_PASSCODE){
+    sessionStorage.setItem('adminUnlocked', 'yes');
+    document.getElementById('adminModalOverlay').classList.remove('show');
+    const action = pendingAdminAction;
+    pendingAdminAction = null;
+    if(action) action();
+  }else{
+    document.getElementById('adminPassStatus').textContent = 'Incorrect passcode.';
+  }
+});
+document.getElementById('adminPassInput').addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter') document.getElementById('adminModalConfirm').click();
+});
 const NOM_KEY = 'nominations';
 const PAY_KEY = 'payments';
 const INFO_KEY = 'payment_info';
@@ -659,7 +733,7 @@ async function renderTally(){
   `).join('');
 
   tallyBody.querySelectorAll('.pay-btn').forEach(btn=>{
-    btn.addEventListener('click', ()=> openPayModal(btn.dataset.name));
+    btn.addEventListener('click', ()=> requireAdmin(() => openPayModal(btn.dataset.name)));
   });
 }
 
@@ -714,6 +788,15 @@ async function renderPayMethods(){
   `).join('');
   payEditArea.value = info.map(m => `${m.title} | ${m.detail}`).join('\n');
 }
+
+document.getElementById('payAdminToggle').addEventListener('click', ()=>{
+  const content = document.getElementById('payAdminContent');
+  if(!content.hasAttribute('hidden')){
+    content.setAttribute('hidden', '');
+    return;
+  }
+  requireAdmin(() => content.removeAttribute('hidden'));
+});
 
 document.getElementById('savePayInfo').addEventListener('click', async ()=>{
   const lines = payEditArea.value.split('\n').map(l=>l.trim()).filter(Boolean);
@@ -775,6 +858,15 @@ async function initWheel(){
     wheelInitDone = true;
   }
 }
+
+document.getElementById('wheelAdminToggle').addEventListener('click', ()=>{
+  const content = document.getElementById('wheelAdminContent');
+  if(!content.hasAttribute('hidden')){
+    content.setAttribute('hidden', '');
+    return;
+  }
+  requireAdmin(() => content.removeAttribute('hidden'));
+});
 
 function drawWheel(){
   const canvas = document.getElementById('wheelCanvas');
