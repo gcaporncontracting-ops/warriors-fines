@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Warriors Illusion Wheel</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #000;
+    color: white;
+    font-family: Arial, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.container {
+    width: min(95vw, 850px);
+    text-align: center;
+}
+
+h1 {
+    margin: 0 0 5px;
+    font-size: clamp(25px, 5vw, 48px);
+    letter-spacing: 2px;
+}
+
+.subtitle {
+    color: #168cff;
+    margin-bottom: 15px;
+    font-weight: bold;
+}
+
+.wheel-wrap {
+    position: relative;
+    width: min(92vw, 780px);
+    aspect-ratio: 1;
+    margin: auto;
+}
+
+canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* Pointer */
+.pointer {
+    position: absolute;
+    z-index: 10;
+    top: -2px;
+    left: 50%;
+    transform: translateX(-50%);
+
+    width: 0;
+    height: 0;
+
+    border-left: 20px solid transparent;
+    border-right: 20px solid transparent;
+    border-top: 42px solid #ff2020;
+
+    filter:
+        drop-shadow(0 0 5px red)
+        drop-shadow(0 0 12px red);
+}
+
+button {
+    margin-top: 15px;
+    padding: 15px 45px;
+
+    background: #02060c;
+    color: white;
+
+    border: 2px solid #168cff;
+    border-radius: 15px;
+
+    font-size: 24px;
+    font-weight: bold;
+    letter-spacing: 2px;
+
+    box-shadow:
+        0 0 12px #006cff,
+        inset 0 0 12px rgba(0,100,255,.25);
+
+    cursor: pointer;
+}
+
+button:disabled {
+    opacity: .45;
+}
+
+#result {
+    margin-top: 15px;
+    min-height: 45px;
+    font-size: 22px;
+}
+
+#result strong {
+    color: #168cff;
+    font-size: 34px;
+}
+
+.top-links {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.back-link {
+    color: #6ba8ff;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}
+
+.edit-toggle-btn {
+    background: none;
+    border: 1px solid #333;
+    color: #9ab;
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    box-shadow: none;
+}
+
+.edit-toggle-btn:hover {
+    border-color: #168cff;
+    color: #168cff;
+}
+
+.edit-panel {
+    background: #060a12;
+    border: 1px solid #143050;
+    border-radius: 14px;
+    padding: 20px;
+    margin-top: 18px;
+    text-align: left;
+}
+
+.edit-panel h3 {
+    margin: 0 0 12px;
+    font-size: 16px;
+    color: #6ba8ff;
+    letter-spacing: 1px;
+}
+
+.pane-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.pane-row label {
+    width: 90px;
+    font-size: 13px;
+    color: #889;
+    flex-shrink: 0;
+}
+
+.pane-row input {
+    flex: 1;
+    background: #0c1220;
+    border: 1px solid #223;
+    color: white;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 15px;
+}
+
+.pane-row input:focus {
+    outline: none;
+    border-color: #168cff;
+}
+
+.edit-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.edit-actions button {
+    flex: 1;
+    margin-top: 0;
+    padding: 10px;
+    font-size: 15px;
+    border-radius: 10px;
+}
+
+#savePanes {
+    border-color: #168cff;
+    box-shadow: 0 0 8px #006cff;
+}
+
+#cancelPanes {
+    border-color: #444;
+    box-shadow: none;
+    color: #999;
+}
+
+#editStatus {
+    margin-top: 10px;
+    font-size: 13px;
+    color: #4caf50;
+    min-height: 16px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="top-links">
+        <a href="./index.html" class="back-link">← Back to Hub</a>
+        <button class="edit-toggle-btn" id="editToggle">✎ Edit Panes</button>
+    </div>
+
+    <h1>⚡ WARRIORS ILLUSION WHEEL ⚡</h1>
+
+    <div class="subtitle">
+        WATCH THE WARRIOR APPEAR AS IT SPINS
+    </div>
+
+    <div class="wheel-wrap">
+
+        <div class="pointer"></div>
+
+        <canvas id="wheel"></canvas>
+
+    </div>
+
+    <button id="spinButton">
+        SPIN — 8 SECONDS
+    </button>
+
+    <div id="result">
+        Choose one of 6 possible results
+    </div>
+
+    <div class="edit-panel" id="editPanel" style="display:none;">
+
+        <h3>EDIT THE 6 WHEEL PANES</h3>
+
+        <div class="pane-row">
+            <label>Pane 1</label>
+            <input id="pane0" type="text" maxlength="40">
+        </div>
+
+        <div class="pane-row">
+            <label>Pane 2</label>
+            <input id="pane1" type="text" maxlength="40">
+        </div>
+
+        <div class="pane-row">
+            <label>Pane 3</label>
+            <input id="pane2" type="text" maxlength="40">
+        </div>
+
+        <div class="pane-row">
+            <label>Pane 4</label>
+            <input id="pane3" type="text" maxlength="40">
+        </div>
+
+        <div class="pane-row">
+            <label>Pane 5</label>
+            <input id="pane4" type="text" maxlength="40">
+        </div>
+
+        <div class="pane-row">
+            <label>Pane 6</label>
+            <input id="pane5" type="text" maxlength="40">
+        </div>
+
+        <div class="edit-actions">
+            <button id="savePanes">SAVE</button>
+            <button id="cancelPanes">CANCEL</button>
+        </div>
+
+        <div id="editStatus"></div>
+
+    </div>
+
+</div>
+
+
+
+<script>
+
+/* =========================================================
+   SIX WHEEL PANES (editable)
+   =========================================================
+
+   These labels are stored in the same KV store the fines
+   wall already uses, under the key "wheel_panes". They can
+   be edited via the "Edit Panes" panel and are shown in the
+   winner readout after a spin.
+   ========================================================= */
+
+const PANE_STORE_KEY = "wheel_panes";
+
+let panes = ["1", "2", "3", "4", "5", "6"];
+
+async function loadPanes() {
+
+    try {
+
+        const res =
+            await fetch("/api/store?key=" + PANE_STORE_KEY);
+
+        const data =
+            await res.json();
+
+        if (Array.isArray(data) && data.length === 6) {
+            panes = data.map(String);
+        }
+
+    } catch (err) {
+
+        console.error(
+            "Could not load wheel panes:",
+            err
+        );
+    }
+
+    fillPaneInputs();
+}
+
+function fillPaneInputs() {
+
+    for (let i = 0; i < 6; i++) {
+
+        const el =
+            document.getElementById("pane" + i);
+
+        if (el) {
+            el.value = panes[i];
+        }
+    }
+}
+
+async function savePanes() {
+
+    const statusEl =
+        document.getElementById("editStatus");
+
+    const newPanes = [];
+
+    for (let i = 0; i < 6; i++) {
+
+        const el =
+            document.getElementById("pane" + i);
+
+        const value =
+            (el.value || "").trim();
+
+        newPanes.push(
+            value || String(i + 1)
+        );
+    }
+
+    statusEl.style.color = "#999";
+    statusEl.textContent = "Saving...";
+
+    try {
+
+        const res =
+            await fetch("/api/store?key=" + PANE_STORE_KEY, {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json"
+                },
+                body: JSON.stringify(newPanes)
+            });
+
+        if (!res.ok) {
+            throw new Error("Save failed");
+        }
+
+        panes = newPanes;
+
+        statusEl.style.color = "#4caf50";
+        statusEl.textContent = "Saved!";
+
+        setTimeout(() => {
+
+            document.getElementById("editPanel").style.display =
+                "none";
+
+            statusEl.textContent = "";
+
+        }, 900);
+
+    } catch (err) {
+
+        statusEl.style.color = "#ff5555";
+        statusEl.textContent =
+            "Could not save — try again.";
+
+        console.error(err);
+    }
+}
+
+
+/* =========================================================
+   CANVAS
+   ========================================================= */
+
+const canvas = document.getElementById("wheel");
+const ctx = canvas.getContext("2d");
+
+const button = document.getElementById("spinButton");
+const result = document.getElementById("result");
+
+const SIZE = 900;
+const CENTER = SIZE / 2;
+const RADIUS = 420;
+
+canvas.width = SIZE;
+canvas.height = SIZE;
+
+let rotation = 0;
+let spinning = false;
+
+
+/* =========================================================
+   CHARACTER SET
+   ========================================================= */
+
+const characters =
+    "0123456789";
+
+
+/* =========================================================
+   CHARACTER PARTICLES
+   ========================================================= */
+
+let particles = [];
+
+function createParticles() {
+
+    particles = [];
+
+    /*
+       Dense rings of characters.
+    */
+
+    for (let r = 20; r < 400; r += 4) {
+
+        const count =
+            Math.floor((Math.PI * 2 * r) / 8.5);
+
+        for (let i = 0; i < count; i++) {
+
+            const angle =
+                (i / count) * Math.PI * 2;
+
+            particles.push({
+
+                radius: r,
+
+                angle: angle,
+
+                character:
+                    characters[
+                        Math.floor(
+                            Math.random() *
+                            characters.length
+                        )
+                    ]
+
+            });
+        }
+    }
+}
+
+
+/* =========================================================
+   LOGO IMAGE SAMPLING
+   =========================================================
+
+   Instead of hand-coding the warrior silhouette, we load
+   the real Cockburn Lakes Warriors crest and sample it
+   pixel by pixel. Every particle checks its position
+   against this sampled grid to find out whether it's
+   sitting on real artwork (and what colour that artwork
+   is), or empty background.
+   ========================================================= */
+
+const LOGO_GRID = 160;
+
+/*
+   How large the logo appears on the wheel, in canvas
+   pixels (the logo is square, drawn centred on CENTER).
+*/
+
+const LOGO_DRAW_SIZE = 640;
+
+let logoData = null;
+let logoReady = false;
+
+const logoImg = new Image();
+
+logoImg.src =
+    "/logo.png";
+
+function sampleLogo() {
+
+    const sampleCanvas =
+        document.createElement("canvas");
+
+    sampleCanvas.width = LOGO_GRID;
+    sampleCanvas.height = LOGO_GRID;
+
+    const sampleCtx =
+        sampleCanvas.getContext("2d");
+
+    sampleCtx.drawImage(
+        logoImg,
+        0,
+        0,
+        LOGO_GRID,
+        LOGO_GRID
+    );
+
+    logoData =
+        sampleCtx.getImageData(
+            0,
+            0,
+            LOGO_GRID,
+            LOGO_GRID
+        ).data;
+
+    logoReady = true;
+}
+
+
+/*
+   Push mid-tone colours toward punchier red / white / blue
+   so the digits read clearly at small sizes, without
+   altering which pixels count as "artwork".
+*/
+
+function boostColour(r, g, b) {
+
+    const max = Math.max(r, g, b);
+
+    if (max < 30) {
+        return [60, 60, 60];
+    }
+
+    const scale = 255 / max;
+
+    const br = Math.min(255, r * scale * 1.15);
+    const bg = Math.min(255, g * scale * 1.15);
+    const bb = Math.min(255, b * scale * 1.15);
+
+    return [
+        Math.round(br),
+        Math.round(bg),
+        Math.round(bb)
+    ];
+}
+
+
+/*
+   Given a canvas coordinate (x, y), work out whether it
+   falls on real logo artwork. Returns null for background,
+   or a boosted [r, g, b] colour for artwork.
+*/
+
+const ALPHA_THRESHOLD = 40;
+
+function getLogoColour(x, y) {
+
+    if (!logoReady) {
+        return null;
+    }
+
+    const half = LOGO_DRAW_SIZE / 2;
+
+    const localX = x - (CENTER - half);
+    const localY = y - (CENTER - half);
+
+    if (
+        localX < 0 ||
+        localY < 0 ||
+        localX >= LOGO_DRAW_SIZE ||
+        localY >= LOGO_DRAW_SIZE
+    ) {
+        return null;
+    }
+
+    const gx =
+        Math.floor((localX / LOGO_DRAW_SIZE) * LOGO_GRID);
+
+    const gy =
+        Math.floor((localY / LOGO_DRAW_SIZE) * LOGO_GRID);
+
+    const idx =
+        (gy * LOGO_GRID + gx) * 4;
+
+    const a = logoData[idx + 3];
+
+    if (a < ALPHA_THRESHOLD) {
+        return null;
+    }
+
+    return boostColour(
+        logoData[idx],
+        logoData[idx + 1],
+        logoData[idx + 2]
+    );
+}
+
+
+/* =========================================================
+   DRAW WHEEL
+   ========================================================= */
+
+function drawWheel(now, reveal) {
+
+    ctx.clearRect(0, 0, SIZE, SIZE);
+
+
+    /* -----------------------------------------------------
+       BLACK WHEEL
+       ----------------------------------------------------- */
+
+    ctx.beginPath();
+
+    ctx.arc(
+        CENTER,
+        CENTER,
+        RADIUS,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fillStyle = "#020304";
+    ctx.fill();
+
+
+    /* -----------------------------------------------------
+       CHARACTER FIELD
+       ----------------------------------------------------- */
+
+    ctx.font = "bold 11px monospace";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    for (const p of particles) {
+
+        const angle =
+            p.angle + rotation;
+
+        const x =
+            CENTER +
+            Math.cos(angle) * p.radius;
+
+        const y =
+            CENTER +
+            Math.sin(angle) * p.radius;
+
+
+        /*
+           Work out whether this character sits on real
+           logo artwork (and if so, what colour), by
+           sampling the actual crest image.
+        */
+
+        const logoColour =
+            getLogoColour(x, y);
+
+
+        let alpha = .38;
+        let colour =
+            `rgba(150,160,175,${alpha})`;
+
+
+        /*
+           When reveal is active, the crest becomes much
+           more obvious.
+        */
+
+        if (reveal > 0) {
+
+            if (logoColour) {
+
+                const a =
+                    .38 + reveal * .58;
+
+                colour =
+                    `rgba(${logoColour[0]},${logoColour[1]},${logoColour[2]},${a})`;
+
+            }
+
+            else {
+
+                colour =
+                    `rgba(90,98,112,${.32 - reveal * .2})`;
+
+            }
+
+        }
+
+
+        ctx.fillStyle = colour;
+
+        ctx.fillText(
+            p.character,
+            x,
+            y
+        );
+    }
+
+
+    /* =====================================================
+       SIX SEGMENTS
+       ===================================================== */
+
+    const segmentAngle =
+        (Math.PI * 2) / 6;
+
+
+    /*
+       Segment boundaries
+       are drawn over the character field.
+    */
+
+    ctx.lineWidth = 3;
+    ctx.strokeStyle =
+        "rgba(20,120,255,.55)";
+
+    for (let i = 0; i < 6; i++) {
+
+        const angle =
+            -Math.PI / 2 +
+            i * segmentAngle +
+            rotation;
+
+
+        const x =
+            CENTER +
+            Math.cos(angle) * RADIUS;
+
+        const y =
+            CENTER +
+            Math.sin(angle) * RADIUS;
+
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            CENTER,
+            CENTER
+        );
+
+        ctx.lineTo(
+            x,
+            y
+        );
+
+        ctx.stroke();
+    }
+
+
+    /* =====================================================
+       OUTER RING
+       ===================================================== */
+
+    ctx.beginPath();
+
+    ctx.arc(
+        CENTER,
+        CENTER,
+        RADIUS,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.strokeStyle =
+        "#087cff";
+
+    ctx.lineWidth = 5;
+
+    ctx.shadowColor =
+        "#006cff";
+
+    ctx.shadowBlur = 15;
+
+    ctx.stroke();
+
+    ctx.shadowBlur = 0;
+
+
+    /* =====================================================
+       CENTRE HUB
+       ===================================================== */
+
+    ctx.beginPath();
+
+    ctx.arc(
+        CENTER,
+        CENTER,
+        32,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fillStyle =
+        "#02060c";
+
+    ctx.fill();
+
+    ctx.strokeStyle =
+        "#168cff";
+
+    ctx.lineWidth = 4;
+
+    ctx.stroke();
+}
+
+
+/* =========================================================
+   SPIN
+   ========================================================= */
+
+function spin() {
+
+    if (spinning) return;
+
+    spinning = true;
+
+    button.disabled = true;
+
+    result.textContent =
+        "Watch closely...";
+
+
+    /*
+       Choose the winning segment FIRST.
+
+       There are exactly six possible outcomes.
+    */
+
+    const winner =
+        Math.floor(
+            Math.random() * 6
+        );
+
+
+    /*
+       Each segment occupies exactly 60 degrees.
+    */
+
+    const segmentAngle =
+        (Math.PI * 2) / 6;
+
+
+    /*
+       Centre of the chosen segment.
+    */
+
+    const targetAngle =
+        -Math.PI / 2 +
+        (winner + .5) *
+        segmentAngle;
+
+
+    /*
+       Need the chosen segment centre
+       to finish underneath the pointer.
+
+       Add 10–13 complete rotations.
+    */
+
+    const rotations =
+        10 + Math.floor(
+            Math.random() * 4
+        );
+
+
+    const current =
+        rotation;
+
+
+    const finalRotation =
+        current +
+        rotations * Math.PI * 2 +
+        (-targetAngle);
+
+
+    const start =
+        performance.now();
+
+    const duration =
+        8000;
+
+
+    function animate(time) {
+
+        const elapsed =
+            time - start;
+
+        let progress =
+            Math.min(
+                elapsed / duration,
+                1
+            );
+
+
+        /*
+           Smooth dramatic slowdown.
+        */
+
+        const eased =
+            1 -
+            Math.pow(
+                1 - progress,
+                4
+            );
+
+
+        rotation =
+            current +
+            (finalRotation - current) *
+            eased;
+
+
+        /*
+           Warrior becomes most visible
+           during the middle of the spin.
+
+           It fades slightly at the very beginning
+           and very end so it feels like an illusion.
+        */
+
+        let reveal;
+
+        if (progress < .12) {
+
+            reveal =
+                progress / .12;
+
+        }
+
+        else if (progress > .86) {
+
+            reveal =
+                (1 - progress) / .14;
+
+        }
+
+        else {
+
+            reveal = 1;
+        }
+
+
+        drawWheel(
+            time,
+            reveal
+        );
+
+
+        if (progress < 1) {
+
+            requestAnimationFrame(
+                animate
+            );
+
+        }
+
+        else {
+
+            spinning = false;
+
+            button.disabled = false;
+
+            /*
+               Keep the final segment underneath
+               the pointer.
+            */
+
+            rotation =
+                finalRotation;
+
+            drawWheel(
+                time,
+                0
+            );
+
+
+            result.innerHTML =
+                "🏆 WINNER: <strong>" +
+                panes[winner] +
+                "</strong>";
+        }
+    }
+
+
+    requestAnimationFrame(
+        animate
+    );
+}
+
+
+/* =========================================================
+   INITIALISE
+   =========================================================
+
+   The particle field and wheel can be drawn immediately
+   (they just show as plain grey digits), but the crest
+   colours only become available once the logo image has
+   finished loading and been sampled.
+   ========================================================= */
+
+createParticles();
+
+drawWheel(
+    performance.now(),
+    0
+);
+
+button.disabled = true;
+button.textContent = "LOADING CREST...";
+
+function onLogoReady() {
+
+    sampleLogo();
+
+    button.disabled = false;
+    button.textContent = "SPIN — 8 SECONDS";
+
+    drawWheel(
+        performance.now(),
+        0
+    );
+}
+
+logoImg.onload = onLogoReady;
+
+if (logoImg.complete && logoImg.naturalWidth > 0) {
+    onLogoReady();
+}
+
+button.addEventListener(
+    "click",
+    spin
+);
+
+window.addEventListener(
+    "resize",
+    () => drawWheel(
+        performance.now(),
+        0
+    )
+);
+
+
+/* =========================================================
+   EDIT PANEL WIRING
+   ========================================================= */
+
+const editToggle = document.getElementById("editToggle");
+const editPanel = document.getElementById("editPanel");
+const savePanesBtn = document.getElementById("savePanes");
+const cancelPanesBtn = document.getElementById("cancelPanes");
+
+editToggle.addEventListener("click", () => {
+
+    const isOpen =
+        editPanel.style.display !== "none";
+
+    if (isOpen) {
+
+        editPanel.style.display = "none";
+
+    } else {
+
+        loadPanes();
+
+        editPanel.style.display = "block";
+    }
+});
+
+savePanesBtn.addEventListener("click", savePanes);
+
+cancelPanesBtn.addEventListener("click", () => {
+
+    editPanel.style.display = "none";
+
+    document.getElementById("editStatus").textContent = "";
+});
+
+
+/*
+   Load whatever panes are currently saved so the winner
+   readout reflects them even before the edit panel is
+   opened for the first time.
+*/
+
+loadPanes();
+
+</script>
+
+</body>
+</html>
