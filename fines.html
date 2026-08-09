@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cockburn Lakes Warriors — Fines Wall</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#0b1c4d">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Warriors Hub">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;600;700&family=Work+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -320,12 +326,12 @@
 
       <form id="nomForm" novalidate>
         <label for="nominee">Who's copping the fine? <span class="req">*</span></label>
-        <input type="text" id="nominee" maxlength="60" placeholder="e.g. One-Nut" required>
+        <input type="text" id="nominee" maxlength="60" placeholder="e.g. Macca" required>
 
         <label for="reason">What did they do? <span class="req">*</span>
           <span class="hint">This is what gets posted on the wall — make it count.</span>
         </label>
-        <textarea id="reason" maxlength="240" placeholder="e.g. Wouldn't shut up during Home and Away." required></textarea>
+        <textarea id="reason" maxlength="240" placeholder="e.g. Turned up to training in the wrong boots... again." required></textarea>
 
         <label for="nominator">Your name <span class="req">*</span>
           <span class="hint">Recorded privately for the club — never shown on the wall or tally board.</span>
@@ -982,6 +988,11 @@ document.getElementById('saveWheelOptions').addEventListener('click', async ()=>
 
 // ---------- init ----------
 renderWall();
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js'));
+  }
 </script>
 </body>
 </html>
