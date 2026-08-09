@@ -32,7 +32,7 @@
     background-color:var(--navy-deep);
     background-image:
       linear-gradient(180deg, rgba(11,28,77,.94) 0%, rgba(11,28,77,.90) 40%, rgba(11,28,77,.96) 100%),
-      url('/crest.png');
+      url('/logo.png');
     background-repeat:no-repeat;
     background-position: top center, center 120px;
     background-size: cover, 720px;
@@ -306,11 +306,10 @@
     pointer-events:none;
   }
   .wheel-wrap .center-head img{
-    width:100%;height:100%;object-fit:cover;object-position:center;
+    width:150%;height:150%;object-fit:cover;object-position:38% 45%;
   }
   #wheelResult{
     margin-top:18px;min-height:30px;text-align:center;
-  }
   .install-splash{
     position:fixed;inset:0;z-index:100;
     display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -375,17 +374,17 @@
 
       <form id="nomForm" novalidate>
         <label for="nominee">Who's copping the fine? <span class="req">*</span></label>
-        <input type="text" id="nominee" maxlength="60" placeholder="e.g. One Nut" required>
+        <input type="text" id="nominee" maxlength="60" placeholder="e.g. Macca" required>
 
         <label for="reason">What did they do? <span class="req">*</span>
           <span class="hint">This is what gets posted on the wall — make it count.</span>
         </label>
-        <textarea id="reason" maxlength="240" placeholder="e.g. for being one nut" required></textarea>
+        <textarea id="reason" maxlength="240" placeholder="e.g. Turned up to training in the wrong boots... again." required></textarea>
 
         <label for="nominator">Your name <span class="req">*</span>
           <span class="hint">Recorded privately for the club — never shown on the wall or tally board.</span>
         </label>
-        <input type="text" id="nominator" maxlength="60" placeholder="e.g. Seldo" required>
+        <input type="text" id="nominator" maxlength="60" placeholder="e.g. Jonesy" required>
 
         <div class="privacy-note">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8a8370" stroke-width="2"><path d="M12 2 4 6v6c0 5 4 8 8 10 4-2 8-5 8-10V6l-8-4Z"/></svg>
@@ -459,8 +458,8 @@
       <div class="wheel-wrap">
         <div class="pointer"></div>
         <canvas id="wheelCanvas"></canvas>
-        <div class="center-head">
-          <img src="/wheel-center.png" alt="">
+        <div class="center-head" id="centerHead">
+          <img src="/crest.png" alt="">
         </div>
       </div>
 
@@ -874,7 +873,7 @@ document.getElementById('savePayInfo').addEventListener('click', async ()=>{
   renderPayMethods();
 });
 
-// ---------- spin wheel (red / white / blue panels) ----------
+// ---------- spin wheel ----------
 const WHEEL_KEY = 'wheel_options';
 const defaultWheelOptions = [
   'Shout a round',
@@ -886,8 +885,7 @@ const defaultWheelOptions = [
   'Bring snacks next training',
   'Front seat on the bus',
 ];
-
-const wheelPanelColors = ['#d62828', '#ffffff', '#1d4fd8'];
+const wheelSliceColors = ['#132a6e', '#d62828', '#1d4fd8', '#0b1c4d'];
 
 let wheelOptions = defaultWheelOptions.slice();
 let wheelInitDone = false;
@@ -909,6 +907,15 @@ async function saveWheelOptions(list){
   });
 }
 
+async function initWheel(){
+  if(!wheelInitDone){
+    wheelOptions = await loadWheelOptions();
+    document.getElementById('wheelEditArea').value = wheelOptions.join('\n');
+    drawWheel();
+    wheelInitDone = true;
+  }
+}
+
 document.getElementById('wheelAdminToggle').addEventListener('click', ()=>{
   const content = document.getElementById('wheelAdminContent');
   if(!content.hasAttribute('hidden')){
@@ -918,113 +925,47 @@ document.getElementById('wheelAdminToggle').addEventListener('click', ()=>{
   requireAdmin(() => content.removeAttribute('hidden'));
 });
 
-function wrapWheelText(ctx, text, maxWidth){
-  const words = text.split(' ');
-  const lines = [];
-  let current = '';
-
-  for (const word of words){
-    const test = current ? current + ' ' + word : word;
-    if (!current || ctx.measureText(test).width <= maxWidth){
-      current = test;
-    } else {
-      lines.push(current);
-      current = word;
-    }
-  }
-
-  if (current) lines.push(current);
-  return lines;
-}
-
 function drawWheel(){
   const canvas = document.getElementById('wheelCanvas');
   const ctx = canvas.getContext('2d');
-  const size = 640;
+  const size = 600;
   canvas.width = size;
   canvas.height = size;
   const center = size / 2;
-  const radius = size / 2 - 4;
-  const hubRadius = 46;
+  const radius = size / 2;
 
   ctx.clearRect(0, 0, size, size);
-
-  const slice = (Math.PI * 2) / Math.max(wheelOptions.length, 1);
+  const slice = (Math.PI * 2) / wheelOptions.length;
 
   wheelOptions.forEach((option, i) => {
     const start = i * slice;
     const end = start + slice;
-    const bg = wheelPanelColors[i % wheelPanelColors.length];
 
     ctx.beginPath();
     ctx.moveTo(center, center);
     ctx.arc(center, center, radius, start, end);
     ctx.closePath();
-    ctx.fillStyle = bg;
+    ctx.fillStyle = wheelSliceColors[i % wheelSliceColors.length];
     ctx.fill();
-    ctx.strokeStyle = '#0b1c4d';
-    ctx.lineWidth = 3;
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 4;
     ctx.stroke();
 
-    const textColor = (bg === '#ffffff') ? '#132a6e' : '#ffffff';
-    const midAngle = start + slice / 2;
-
-    // Position the label at a representative point inside the wedge,
-    // but keep the text itself perfectly horizontal — it never rotates
-    // to follow the wedge's angle, no matter where on the wheel it sits.
-    const labelRadius = (hubRadius + radius) * 0.55;
-    const anchorX = center + Math.cos(midAngle) * labelRadius;
-    const anchorY = center + Math.sin(midAngle) * labelRadius;
-
-    // Available width at that point, based on the wedge's chord width —
-    // used to decide how many lines the text needs to wrap onto.
-    const chordWidth = 2 * labelRadius * Math.sin(slice / 2) * 0.86;
-
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = textColor;
-
-    if (bg !== '#ffffff'){
-      ctx.shadowColor = 'rgba(0,0,0,.45)';
-      ctx.shadowBlur = 3;
-    } else {
-      ctx.shadowBlur = 0;
-    }
-
-    // Start large and readable, wrapping onto as many lines as it takes
-    // to fit — only shrinking the font if the block gets too tall.
-    let fontSize = 24;
-    let lines = [];
-
-    while (fontSize >= 10){
-      ctx.font = `bold ${fontSize}px 'Work Sans', Arial`;
-      lines = wrapWheelText(ctx, option, chordWidth);
-
-      const lineHeight = fontSize + 4;
-      const blockHeight = lines.length * lineHeight;
-      const maxLineWidth = Math.max(...lines.map(l => ctx.measureText(l).width));
-
-      const fitsWidth = maxLineWidth <= chordWidth;
-      const fitsHeight = blockHeight <= radius * 0.62;
-
-      if (fitsWidth && fitsHeight) break;
-      fontSize -= 1;
-    }
-
-    ctx.font = `bold ${fontSize}px 'Work Sans', Arial`;
-    const lineHeight = fontSize + 4;
-
     ctx.save();
-    ctx.translate(anchorX, anchorY);
-    lines.forEach((line, idx) => {
-      const yOffset = (idx - (lines.length - 1) / 2) * lineHeight;
-      ctx.fillText(line, 0, yOffset);
-    });
+    ctx.translate(center, center);
+    ctx.rotate(start + slice / 2);
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#ffffff';
+    ctx.font = "bold 22px 'Work Sans', Arial";
+    ctx.shadowColor = 'rgba(0,0,0,0.5)';
+    ctx.shadowBlur = 4;
+    ctx.fillText(option, radius - 22, 0);
     ctx.restore();
   });
 
   ctx.beginPath();
-  ctx.arc(center, center, hubRadius, 0, Math.PI * 2);
+  ctx.arc(center, center, 42, 0, Math.PI * 2);
   ctx.fillStyle = '#ffffff';
   ctx.fill();
   ctx.strokeStyle = '#132a6e';
@@ -1033,19 +974,20 @@ function drawWheel(){
 }
 
 function spinWheel(){
-  if (wheelSpinning || wheelOptions.length < 2) return;
+  if(wheelSpinning || wheelOptions.length < 2) return;
   wheelSpinning = true;
   const spinBtn = document.getElementById('spinBtn');
   spinBtn.disabled = true;
   document.getElementById('wheelResult').textContent = '';
 
-  const extraRotations = 6 + Math.floor(Math.random() * 4);
+  const extraRotations = 5 + Math.floor(Math.random() * 4);
   const randomAngle = Math.random() * 360;
   const startRotation = wheelRotation;
   const targetRotation = wheelRotation + extraRotations * 360 + randomAngle;
-  const duration = 5200 + Math.random() * 1200;
+  const duration = 5000 + Math.random() * 1500;
   const startTime = performance.now();
   const canvas = document.getElementById('wheelCanvas');
+  const centerHead = document.getElementById('centerHead');
 
   function animate(currentTime){
     const elapsed = currentTime - startTime;
@@ -1053,9 +995,10 @@ function spinWheel(){
     const ease = 1 - Math.pow(1 - progress, 4);
     wheelRotation = startRotation + (targetRotation - startRotation) * ease;
     canvas.style.transform = `rotate(${wheelRotation}deg)`;
-    if (progress < 1){
+    centerHead.style.transform = `translate(-50%,-50%) rotate(${-wheelRotation}deg)`;
+    if(progress < 1){
       requestAnimationFrame(animate);
-    } else {
+    }else{
       finishSpin();
     }
   }
@@ -1066,24 +1009,15 @@ function finishSpin(){
   wheelSpinning = false;
   document.getElementById('spinBtn').disabled = false;
   let finalAngle = wheelRotation % 360;
-  if (finalAngle < 0) finalAngle += 360;
+  if(finalAngle < 0) finalAngle += 360;
   const sectionSize = 360 / wheelOptions.length;
   const pointerAngle = (360 - finalAngle + 270) % 360;
-  const winnerIndex = Math.floor(pointerAngle / sectionSize) % wheelOptions.length;
+  const winnerIndex = Math.floor(pointerAngle / sectionSize);
   const winner = wheelOptions[winnerIndex];
   document.getElementById('wheelResult').innerHTML = `🏆 ${escapeHtml(winner)}`;
 }
 
 document.getElementById('spinBtn').addEventListener('click', spinWheel);
-
-async function initWheel(){
-  if (wheelInitDone) return;
-  wheelInitDone = true;
-
-  wheelOptions = await loadWheelOptions();
-  document.getElementById('wheelEditArea').value = wheelOptions.join('\n');
-  drawWheel();
-}
 
 document.getElementById('saveWheelOptions').addEventListener('click', async ()=>{
   const lines = document.getElementById('wheelEditArea').value.split('\n').map(l=>l.trim()).filter(Boolean);
