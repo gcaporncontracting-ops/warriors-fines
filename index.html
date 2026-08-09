@@ -136,12 +136,18 @@
       <p>Nominate a teammate for a fine, see the weekly wall, and check the tally board.</p>
     </a>
 
-    <a class="card disabled" href="#" aria-disabled="true">
-      <span class="soon-tag">Coming soon</span>
+    <div class="card grade-picker" id="fixturesPickerCard">
       <span class="icon">📅</span>
       <h2>Game Schedules</h2>
       <p>Upcoming fixtures, training times, and venue details.</p>
-    </a>
+      <button type="button" class="grade-toggle" id="fixturesToggle">Choose your grade ▾</button>
+      <div class="grade-options" id="fixturesOptions" hidden>
+        <a href="https://www.playhq.com/afl/org/perth-football-league/perth-football-league-2026/budget-car-and-truck-rental-b-grade-men/5d8b69aa" target="_blank" rel="noopener">League</a>
+        <a href="https://www.playhq.com/afl/org/perth-football-league/2026/budget-car-and-truck-rental-b-reserves-men/5d8a608a" target="_blank" rel="noopener">Reserves</a>
+        <a href="https://www.playhq.com/afl/org/perth-football-league/2026/egt-drew-banfield-colts/9c044820" target="_blank" rel="noopener">Colts</a>
+        <a href="https://www.playhq.com/afl/org/perth-football-league/2026/budget-car-and-truck-rental-e2-south-men/3bd3820f" target="_blank" rel="noopener">Thirds</a>
+      </div>
+    </div>
 
     <a class="card disabled" href="#" aria-disabled="true">
       <span class="soon-tag">Coming soon</span>
@@ -185,6 +191,19 @@
     } else {
       gradeOptions.setAttribute('hidden', '');
       gradeToggle.textContent = 'Choose your grade ▾';
+    }
+  });
+
+  const fixturesToggle = document.getElementById('fixturesToggle');
+  const fixturesOptions = document.getElementById('fixturesOptions');
+  fixturesToggle.addEventListener('click', () => {
+    const isHidden = fixturesOptions.hasAttribute('hidden');
+    if (isHidden) {
+      fixturesOptions.removeAttribute('hidden');
+      fixturesToggle.textContent = 'Choose your grade ▴';
+    } else {
+      fixturesOptions.setAttribute('hidden', '');
+      fixturesToggle.textContent = 'Choose your grade ▾';
     }
   });
 </script>
