@@ -95,6 +95,26 @@
     background:#d8d2bd;color:#6b6455;padding:3px 8px;border-radius:999px;
   }
 
+  .card.grade-picker{border-bottom-color:var(--gold);}
+  .grade-toggle{
+    margin-top:12px;
+    font-family:'JetBrains Mono',monospace;font-size:12.5px;letter-spacing:.03em;text-transform:uppercase;
+    background:var(--navy);color:#fff;border:none;border-radius:7px;
+    padding:9px 14px;cursor:pointer;width:100%;text-align:left;
+  }
+  .grade-toggle:hover{background:var(--navy-deep);}
+  .grade-options{
+    display:flex;flex-direction:column;gap:6px;margin-top:10px;
+  }
+  .grade-options a{
+    display:block;text-decoration:none;
+    font-family:'Work Sans',sans-serif;font-weight:600;font-size:13.5px;
+    color:var(--navy);background:#fff;
+    border:1.5px solid rgba(19,42,110,.18);border-radius:7px;
+    padding:9px 12px;transition:background .12s, border-color .12s;
+  }
+  .grade-options a:hover{background:#eef1fa;border-color:var(--navy);}
+
   footer.foot{
     text-align:center;color:rgba(255,255,255,.55);font-size:12px;margin-top:40px;
     font-family:'JetBrains Mono',monospace;
@@ -137,14 +157,37 @@
       <p>The playing list, squad numbers, and player profiles.</p>
     </a>
 
-    <a class="card" href="https://warriors-vote-v2.gcaporncontracting.workers.dev">
+    <div class="card grade-picker" id="gradePickerCard">
       <span class="icon">🗳️</span>
       <h2>Player Nominations</h2>
       <p>Vote for best-on-ground and club award nominations each round.</p>
-    </a>
+      <button type="button" class="grade-toggle" id="gradeToggle">Choose your grade ▾</button>
+      <div class="grade-options" id="gradeOptions" hidden>
+        <a href="https://warriors-vote-v2.gcaporncontracting.workers.dev/vote/league">League</a>
+        <a href="https://warriors-vote-v2.gcaporncontracting.workers.dev/vote/reserves">Reserves</a>
+        <a href="https://warriors-vote-v2.gcaporncontracting.workers.dev/vote/colts">Colts</a>
+        <a href="https://warriors-vote-v2.gcaporncontracting.workers.dev/vote/thirds">Thirds</a>
+      </div>
+    </div>
   </div>
 
   <footer class="foot">Cockburn Lakes F.C. Warriors — members hub.</footer>
 </div>
+
+<script>
+  const gradeToggle = document.getElementById('gradeToggle');
+  const gradeOptions = document.getElementById('gradeOptions');
+  gradeToggle.addEventListener('click', () => {
+    const isHidden = gradeOptions.hasAttribute('hidden');
+    if (isHidden) {
+      gradeOptions.removeAttribute('hidden');
+      gradeToggle.textContent = 'Choose your grade ▴';
+    } else {
+      gradeOptions.setAttribute('hidden', '');
+      gradeToggle.textContent = 'Choose your grade ▾';
+    }
+  });
+</script>
 </body>
 </html>
+
