@@ -295,12 +295,45 @@
   }
   #wheelResult{
     margin-top:18px;min-height:30px;text-align:center;
+  .install-splash{
+    position:fixed;inset:0;z-index:100;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    background:var(--navy-deep);
+    padding:32px;text-align:center;
+  }
+  .install-splash[hidden]{display:none;}
+  .install-logo{width:min(60vw,220px);margin-bottom:22px;}
+  .install-title{
     font-family:'Anton',sans-serif;text-transform:uppercase;
-    font-size:20px;color:var(--navy);
+    font-size:clamp(28px,7vw,44px);color:#fff;margin:0 0 10px;
+  }
+  .install-sub{
+    color:rgba(255,255,255,.8);font-size:15px;line-height:1.5;
+    max-width:320px;margin:0 0 28px;
+  }
+  .install-btn{
+    font-family:'JetBrains Mono',monospace;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+    background:var(--red);color:#fff;border:none;border-radius:8px;
+    padding:14px 30px;font-size:14px;cursor:pointer;
+    box-shadow:0 6px 0 #9c1c1c;
+  }
+  .install-btn:active{transform:translateY(3px);box-shadow:0 3px 0 #9c1c1c;}
+  .install-later{
+    margin-top:16px;background:none;border:none;
+    color:rgba(255,255,255,.6);font-family:'Work Sans',sans-serif;font-size:13px;
+    text-decoration:underline;cursor:pointer;
   }
 </style>
 </head>
 <body>
+
+<div class="install-splash" id="installSplash">
+  <img src="/crest.png" alt="Cockburn Lakes Warriors crest" class="install-logo">
+  <p class="install-title">Warriors Hub</p>
+  <p class="install-sub" id="installSubtext">Add this to your home screen for one-tap access to fines, fixtures, and voting.</p>
+  <button type="button" class="install-btn" id="installBtn">Install App</button>
+  <button type="button" class="install-later" id="installLater">Maybe later</button>
+</div>
 
 <div class="wrap">
   <header class="top">
@@ -993,6 +1026,57 @@ renderWall();
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js'));
   }
+
+  // ---------- install splash ----------
+  (function(){
+    const splash = document.getElementById('installSplash');
+    const installBtn = document.getElementById('installBtn');
+    const laterBtn = document.getElementById('installLater');
+    const subtext = document.getElementById('installSubtext');
+
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+      || window.navigator.standalone === true;
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+    const isMobile = /android|iphone|ipad|ipod/i.test(navigator.userAgent);
+    const dismissed = localStorage.getItem('installSplashDismissed') === 'yes';
+
+    if (isStandalone || dismissed || !isMobile) {
+      splash.setAttribute('hidden', '');
+    } else {
+      let deferredPrompt = null;
+
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+      });
+
+      if (isIOS) {
+        subtext.textContent = 'Tap the Share icon below, then "Add to Home Screen" for one-tap access.';
+        installBtn.textContent = 'Got it';
+        installBtn.addEventListener('click', () => {
+          localStorage.setItem('installSplashDismissed', 'yes');
+          splash.setAttribute('hidden', '');
+        });
+      } else {
+        installBtn.addEventListener('click', async () => {
+          if (deferredPrompt) {
+            deferredPrompt.prompt();
+            await deferredPrompt.userChoice;
+          } else {
+            subtext.textContent = 'Open your browser menu and tap "Install app" or "Add to Home Screen".';
+            return;
+          }
+          localStorage.setItem('installSplashDismissed', 'yes');
+          splash.setAttribute('hidden', '');
+        });
+      }
+
+      laterBtn.addEventListener('click', () => {
+        localStorage.setItem('installSplashDismissed', 'yes');
+        splash.setAttribute('hidden', '');
+      });
+    }
+  })();
 </script>
 </body>
 </html>
