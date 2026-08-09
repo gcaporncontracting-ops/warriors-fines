@@ -67,7 +67,7 @@
     gap:18px;
     margin-top:20px;
   }
-  a.card{
+  .card{
     display:block;text-decoration:none;color:var(--ink);
     background:var(--paper);
     border-radius:14px;
@@ -76,11 +76,12 @@
     transition:transform .12s, box-shadow .12s;
     border-bottom:5px solid var(--navy);
     position:relative;
+    cursor:pointer;
   }
-  a.card:hover{transform:translateY(-3px);box-shadow:0 18px 40px rgba(0,0,0,.4);}
-  a.card:nth-child(3n+2){border-bottom-color:var(--red);}
-  a.card:nth-child(3n){border-bottom-color:var(--gold);}
-  a.card.disabled{
+  .card:hover{transform:translateY(-3px);box-shadow:0 18px 40px rgba(0,0,0,.4);}
+  .card:nth-child(3n+2){border-bottom-color:var(--red);}
+  .card:nth-child(3n){border-bottom-color:var(--gold);}
+  .card.disabled{
     pointer-events:none;opacity:.68;filter:grayscale(.15);
   }
   .card .icon{font-size:26px;margin-bottom:10px;display:block;}
@@ -95,7 +96,7 @@
     background:#d8d2bd;color:#6b6455;padding:3px 8px;border-radius:999px;
   }
 
-  .card.grade-picker{border-bottom-color:var(--gold);cursor:pointer;position:relative;}
+  .card.grade-picker{cursor:pointer;position:relative;}
   .card.grade-picker .chevron{
     position:absolute;top:16px;right:16px;
     font-size:15px;color:var(--navy);opacity:.55;
