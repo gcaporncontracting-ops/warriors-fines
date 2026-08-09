@@ -264,6 +264,30 @@
   @media (prefers-reduced-motion: reduce){
     *{transition:none !important;}
   }
+  .wheel-wrap{
+    position:relative;
+    width:min(80vw, 340px);
+    aspect-ratio:1;
+    margin:24px auto 0;
+  }
+  .wheel-wrap canvas{
+    width:100%;height:100%;border-radius:50%;
+    box-shadow:0 0 0 6px var(--navy), 0 12px 30px rgba(0,0,0,.35);
+  }
+  .wheel-wrap .pointer{
+    position:absolute;top:-16px;left:50%;transform:translateX(-50%);
+    width:0;height:0;
+    border-left:16px solid transparent;
+    border-right:16px solid transparent;
+    border-top:30px solid var(--red);
+    z-index:5;
+    filter:drop-shadow(0 3px 3px rgba(0,0,0,.4));
+  }
+  #wheelResult{
+    margin-top:18px;min-height:30px;text-align:center;
+    font-family:'Anton',sans-serif;text-transform:uppercase;
+    font-size:20px;color:var(--navy);
+  }
 </style>
 </head>
 <body>
@@ -281,6 +305,7 @@
     <button class="tab-btn" data-panel="wall" role="tab" aria-selected="false">The Wall</button>
     <button class="tab-btn" data-panel="tally" role="tab" aria-selected="false">Tally Board</button>
     <button class="tab-btn" data-panel="pay" role="tab" aria-selected="false">Payment</button>
+    <button class="tab-btn" data-panel="wheel" role="tab" aria-selected="false">Spin Wheel</button>
   </nav>
 
   <!-- SUBMIT -->
@@ -359,6 +384,33 @@
         <div class="submit-row">
           <button type="button" class="primary" id="savePayInfo" style="box-shadow:0 6px 0 #0d5c2b;background:#1c7a3d;">Save payment info</button>
           <span class="form-status" id="payStatus"></span>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- SPIN WHEEL -->
+  <section class="panel" id="panel-wheel">
+    <div class="card-surface">
+      <h2 class="form-title" style="margin:0 0 4px;">Spin for punishment</h2>
+      <p class="form-sub">Can't agree on a fine? Let the wheel decide. Edit the list below to set your own punishments.</p>
+
+      <div class="wheel-wrap">
+        <div class="pointer"></div>
+        <canvas id="wheelCanvas"></canvas>
+      </div>
+
+      <div class="submit-row" style="justify-content:center;margin-top:20px;">
+        <button type="button" class="primary" id="spinBtn">Spin the wheel</button>
+      </div>
+      <div id="wheelResult"></div>
+
+      <details class="admin-edit">
+        <summary>Edit the punishment list</summary>
+        <textarea id="wheelEditArea" placeholder="One punishment per line"></textarea>
+        <div class="submit-row">
+          <button type="button" class="primary" id="saveWheelOptions" style="box-shadow:0 6px 0 #0d5c2b;background:#1c7a3d;">Save list</button>
+          <span class="form-status" id="wheelStatus"></span>
         </div>
       </details>
     </div>
@@ -461,6 +513,7 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     if(btn.dataset.panel === 'wall') renderWall();
     if(btn.dataset.panel === 'tally') renderTally();
     if(btn.dataset.panel === 'pay') renderPayMethods();
+    if(btn.dataset.panel === 'wheel') initWheel();
   });
 });
 
@@ -678,6 +731,161 @@ document.getElementById('savePayInfo').addEventListener('click', async ()=>{
   status.textContent = 'Saved for everyone.';
   status.className = 'form-status ok';
   renderPayMethods();
+});
+
+// ---------- spin wheel ----------
+const WHEEL_KEY = 'wheel_options';
+const defaultWheelOptions = [
+  'Shout a round',
+  'Sing the team song solo',
+  'Wear odd socks next game',
+  '20 push-ups',
+  'Carry the water bottles',
+  'No nicknames for a week',
+  'Bring snacks next training',
+  'Front seat on the bus',
+];
+const wheelSliceColors = ['#132a6e', '#d62828', '#1d4fd8', '#0b1c4d'];
+
+let wheelOptions = defaultWheelOptions.slice();
+let wheelInitDone = false;
+let wheelRotation = 0;
+let wheelSpinning = false;
+
+async function loadWheelOptions(){
+  try{
+    const res = await fetch(`/api/store?key=${WHEEL_KEY}`, { cache: 'no-store' });
+    const val = await res.json();
+    return Array.isArray(val) && val.length ? val : defaultWheelOptions;
+  }catch(e){ return defaultWheelOptions; }
+}
+async function saveWheelOptions(list){
+  await fetch(`/api/store?key=${WHEEL_KEY}`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(list),
+  });
+}
+
+async function initWheel(){
+  if(!wheelInitDone){
+    wheelOptions = await loadWheelOptions();
+    document.getElementById('wheelEditArea').value = wheelOptions.join('\n');
+    drawWheel();
+    wheelInitDone = true;
+  }
+}
+
+function drawWheel(){
+  const canvas = document.getElementById('wheelCanvas');
+  const ctx = canvas.getContext('2d');
+  const size = 600;
+  canvas.width = size;
+  canvas.height = size;
+  const center = size / 2;
+  const radius = size / 2;
+
+  ctx.clearRect(0, 0, size, size);
+  const slice = (Math.PI * 2) / wheelOptions.length;
+
+  wheelOptions.forEach((option, i) => {
+    const start = i * slice;
+    const end = start + slice;
+
+    ctx.beginPath();
+    ctx.moveTo(center, center);
+    ctx.arc(center, center, radius, start, end);
+    ctx.closePath();
+    ctx.fillStyle = wheelSliceColors[i % wheelSliceColors.length];
+    ctx.fill();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 4;
+    ctx.stroke();
+
+    ctx.save();
+    ctx.translate(center, center);
+    ctx.rotate(start + slice / 2);
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#ffffff';
+    ctx.font = "bold 22px 'Work Sans', Arial";
+    ctx.shadowColor = 'rgba(0,0,0,0.5)';
+    ctx.shadowBlur = 4;
+    ctx.fillText(option, radius - 22, 0);
+    ctx.restore();
+  });
+
+  ctx.beginPath();
+  ctx.arc(center, center, 42, 0, Math.PI * 2);
+  ctx.fillStyle = '#ffffff';
+  ctx.fill();
+  ctx.strokeStyle = '#132a6e';
+  ctx.lineWidth = 5;
+  ctx.stroke();
+}
+
+function spinWheel(){
+  if(wheelSpinning || wheelOptions.length < 2) return;
+  wheelSpinning = true;
+  const spinBtn = document.getElementById('spinBtn');
+  spinBtn.disabled = true;
+  document.getElementById('wheelResult').textContent = '';
+
+  const extraRotations = 5 + Math.floor(Math.random() * 4);
+  const randomAngle = Math.random() * 360;
+  const startRotation = wheelRotation;
+  const targetRotation = wheelRotation + extraRotations * 360 + randomAngle;
+  const duration = 5000 + Math.random() * 1500;
+  const startTime = performance.now();
+  const canvas = document.getElementById('wheelCanvas');
+
+  function animate(currentTime){
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const ease = 1 - Math.pow(1 - progress, 4);
+    wheelRotation = startRotation + (targetRotation - startRotation) * ease;
+    canvas.style.transform = `rotate(${wheelRotation}deg)`;
+    if(progress < 1){
+      requestAnimationFrame(animate);
+    }else{
+      finishSpin();
+    }
+  }
+  requestAnimationFrame(animate);
+}
+
+function finishSpin(){
+  wheelSpinning = false;
+  document.getElementById('spinBtn').disabled = false;
+  let finalAngle = wheelRotation % 360;
+  if(finalAngle < 0) finalAngle += 360;
+  const sectionSize = 360 / wheelOptions.length;
+  const pointerAngle = (360 - finalAngle + 270) % 360;
+  const winnerIndex = Math.floor(pointerAngle / sectionSize);
+  const winner = wheelOptions[winnerIndex];
+  document.getElementById('wheelResult').innerHTML = `🏆 ${escapeHtml(winner)}`;
+}
+
+document.getElementById('spinBtn').addEventListener('click', spinWheel);
+
+document.getElementById('saveWheelOptions').addEventListener('click', async ()=>{
+  const lines = document.getElementById('wheelEditArea').value.split('\n').map(l=>l.trim()).filter(Boolean);
+  const status = document.getElementById('wheelStatus');
+  if(lines.length < 2){
+    status.textContent = 'Add at least two options.';
+    status.className = 'form-status err';
+    return;
+  }
+  wheelOptions = lines;
+  try{
+    await saveWheelOptions(lines);
+    drawWheel();
+    status.textContent = 'Saved for everyone.';
+    status.className = 'form-status ok';
+  }catch(e){
+    status.textContent = 'Could not save — check your connection and try again.';
+    status.className = 'form-status err';
+  }
 });
 
 // ---------- init ----------
