@@ -1,7 +1,5 @@
-const CACHE_NAME = 'warriors-hub-v1';
+const CACHE_NAME = 'warriors-hub-v2';
 const APP_SHELL = [
-  '/',
-  '/fines.html',
   '/manifest.json',
   '/icon-192.png',
   '/icon-512.png',
@@ -28,6 +26,14 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
+  // Never intercept page navigations. Cloudflare redirects clean URLs
+  // (e.g. /fines.html -> /fines), and caching or replaying a redirected
+  // response for a navigation request causes ERR_FAILED in Chrome/Safari.
+  // Letting these go straight to the network avoids that entirely.
+  if (event.request.mode === 'navigate') {
+    return;
+  }
+
   // Never cache API calls — fines, tally, fixtures, and payment info must
   // always come from the network so everyone sees live, shared data.
   if (url.pathname.startsWith('/api/')) {
@@ -38,7 +44,8 @@ self.addEventListener('fetch', (event) => {
     caches.match(event.request).then((cached) => {
       const networkFetch = fetch(event.request)
         .then((response) => {
-          if (response && response.status === 200) {
+          // Skip caching redirected or non-OK responses.
+          if (response && response.status === 200 && !response.redirected) {
             const clone = response.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
           }
