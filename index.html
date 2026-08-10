@@ -885,7 +885,7 @@ const defaultWheelOptions = [
   'Bring snacks next training',
   'Front seat on the bus',
 ];
-const wheelSliceColors = ['#132a6e', '#d62828', '#1d4fd8', '#0b1c4d'];
+const wheelPanelColors = ['#d62828', '#ffffff', '#1d4fd8'];
 
 let wheelOptions = defaultWheelOptions.slice();
 let wheelInitDone = false;
@@ -925,47 +925,113 @@ document.getElementById('wheelAdminToggle').addEventListener('click', ()=>{
   requireAdmin(() => content.removeAttribute('hidden'));
 });
 
+function wrapWheelText(ctx, text, maxWidth){
+  const words = text.split(' ');
+  const lines = [];
+  let current = '';
+
+  for (const word of words){
+    const test = current ? current + ' ' + word : word;
+    if (!current || ctx.measureText(test).width <= maxWidth){
+      current = test;
+    } else {
+      lines.push(current);
+      current = word;
+    }
+  }
+
+  if (current) lines.push(current);
+  return lines;
+}
+
 function drawWheel(){
   const canvas = document.getElementById('wheelCanvas');
   const ctx = canvas.getContext('2d');
-  const size = 600;
+  const size = 640;
   canvas.width = size;
   canvas.height = size;
   const center = size / 2;
-  const radius = size / 2;
+  const radius = size / 2 - 4;
+  const hubRadius = 46;
 
   ctx.clearRect(0, 0, size, size);
-  const slice = (Math.PI * 2) / wheelOptions.length;
+
+  const slice = (Math.PI * 2) / Math.max(wheelOptions.length, 1);
 
   wheelOptions.forEach((option, i) => {
     const start = i * slice;
     const end = start + slice;
+    const bg = wheelPanelColors[i % wheelPanelColors.length];
 
     ctx.beginPath();
     ctx.moveTo(center, center);
     ctx.arc(center, center, radius, start, end);
     ctx.closePath();
-    ctx.fillStyle = wheelSliceColors[i % wheelSliceColors.length];
+    ctx.fillStyle = bg;
     ctx.fill();
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 4;
+    ctx.strokeStyle = '#0b1c4d';
+    ctx.lineWidth = 3;
     ctx.stroke();
 
-    ctx.save();
-    ctx.translate(center, center);
-    ctx.rotate(start + slice / 2);
-    ctx.textAlign = 'right';
+    const textColor = (bg === '#ffffff') ? '#132a6e' : '#ffffff';
+    const midAngle = start + slice / 2;
+
+    // Position the label at a representative point inside the wedge,
+    // but keep the text itself perfectly horizontal — it never rotates
+    // to follow the wedge's angle, no matter where on the wheel it sits.
+    const labelRadius = (hubRadius + radius) * 0.55;
+    const anchorX = center + Math.cos(midAngle) * labelRadius;
+    const anchorY = center + Math.sin(midAngle) * labelRadius;
+
+    // Available width at that point, based on the wedge's chord width —
+    // used to decide how many lines the text needs to wrap onto.
+    const chordWidth = 2 * labelRadius * Math.sin(slice / 2) * 0.86;
+
+    ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = '#ffffff';
-    ctx.font = "bold 22px 'Work Sans', Arial";
-    ctx.shadowColor = 'rgba(0,0,0,0.5)';
-    ctx.shadowBlur = 4;
-    ctx.fillText(option, radius - 22, 0);
+    ctx.fillStyle = textColor;
+
+    if (bg !== '#ffffff'){
+      ctx.shadowColor = 'rgba(0,0,0,.45)';
+      ctx.shadowBlur = 3;
+    } else {
+      ctx.shadowBlur = 0;
+    }
+
+    // Start large and readable, wrapping onto as many lines as it takes
+    // to fit — only shrinking the font if the block gets too tall.
+    let fontSize = 24;
+    let lines = [];
+
+    while (fontSize >= 10){
+      ctx.font = `bold ${fontSize}px 'Work Sans', Arial`;
+      lines = wrapWheelText(ctx, option, chordWidth);
+
+      const lineHeight = fontSize + 4;
+      const blockHeight = lines.length * lineHeight;
+      const maxLineWidth = Math.max(...lines.map(l => ctx.measureText(l).width));
+
+      const fitsWidth = maxLineWidth <= chordWidth;
+      const fitsHeight = blockHeight <= radius * 0.62;
+
+      if (fitsWidth && fitsHeight) break;
+      fontSize -= 1;
+    }
+
+    ctx.font = `bold ${fontSize}px 'Work Sans', Arial`;
+    const lineHeight = fontSize + 4;
+
+    ctx.save();
+    ctx.translate(anchorX, anchorY);
+    lines.forEach((line, idx) => {
+      const yOffset = (idx - (lines.length - 1) / 2) * lineHeight;
+      ctx.fillText(line, 0, yOffset);
+    });
     ctx.restore();
   });
 
   ctx.beginPath();
-  ctx.arc(center, center, 42, 0, Math.PI * 2);
+  ctx.arc(center, center, hubRadius, 0, Math.PI * 2);
   ctx.fillStyle = '#ffffff';
   ctx.fill();
   ctx.strokeStyle = '#132a6e';
@@ -1012,7 +1078,7 @@ function finishSpin(){
   if(finalAngle < 0) finalAngle += 360;
   const sectionSize = 360 / wheelOptions.length;
   const pointerAngle = (360 - finalAngle + 270) % 360;
-  const winnerIndex = Math.floor(pointerAngle / sectionSize);
+  const winnerIndex = Math.floor(pointerAngle / sectionSize) % wheelOptions.length;
   const winner = wheelOptions[winnerIndex];
   document.getElementById('wheelResult').innerHTML = `🏆 ${escapeHtml(winner)}`;
 }
