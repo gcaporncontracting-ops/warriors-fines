@@ -871,6 +871,10 @@ document.getElementById('savePayInfo').addEventListener('click', async ()=>{
   status.textContent = 'Saved for everyone.';
   status.className = 'form-status ok';
   renderPayMethods();
+  setTimeout(() => {
+    document.getElementById('payAdminContent').setAttribute('hidden', '');
+    status.textContent = '';
+  }, 900);
 });
 
 // ---------- spin wheel ----------
@@ -1099,6 +1103,10 @@ document.getElementById('saveWheelOptions').addEventListener('click', async ()=>
     drawWheel();
     status.textContent = 'Saved for everyone.';
     status.className = 'form-status ok';
+    setTimeout(() => {
+      document.getElementById('wheelAdminContent').setAttribute('hidden', '');
+      status.textContent = '';
+    }, 900);
   }catch(e){
     status.textContent = 'Could not save — check your connection and try again.';
     status.className = 'form-status err';
