@@ -588,7 +588,7 @@ async function apiGet(key){
 async function apiSet(key, value){
   const res = await fetch(`/api/store?key=${encodeURIComponent(key)}`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', 'X-Admin-Passcode': ADMIN_PASSCODE },
     body: JSON.stringify(value),
   });
   if(!res.ok) throw new Error('POST failed: ' + res.status);
@@ -906,7 +906,7 @@ async function loadWheelOptions(){
 async function saveWheelOptions(list){
   await fetch(`/api/store?key=${WHEEL_KEY}`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', 'X-Admin-Passcode': ADMIN_PASSCODE },
     body: JSON.stringify(list),
   });
 }
