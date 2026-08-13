@@ -420,6 +420,7 @@
       <div class="board">
         <div class="pin-grid" id="pinGrid"></div>
       </div>
+      <button type="button" class="admin-toggle" id="wallAdminToggle" style="margin-top:14px;">🔒 Committee: manage nominations</button>
     </div>
   </section>
 
@@ -723,6 +724,10 @@ async function renderWall(){
   renderPinGrid();
 }
 
+document.getElementById('wallAdminToggle').addEventListener('click', ()=>{
+  requireAdmin(() => renderPinGrid());
+});
+
 function renderPinGrid(){
   const list = window.__nomCache || [];
   const week = weekSelect.value;
@@ -732,9 +737,10 @@ function renderPinGrid(){
     pinGrid.innerHTML = '<p class="empty-note">No fines posted for this week yet. Get amongst it.</p>';
     return;
   }
+  const adminUnlocked = isAdminUnlocked();
   pinGrid.innerHTML = filtered.map(n => `
     <div class="note">
-      <button type="button" class="delete-note-btn" data-id="${n.id}" title="Remove nomination" aria-label="Remove nomination">×</button>
+      ${adminUnlocked ? `<button type="button" class="delete-note-btn" data-id="${n.id}" title="Remove nomination" aria-label="Remove nomination">×</button>` : ''}
       <span class="pin"></span>
       <span class="fine-tag">FINE · $2</span>
       <p class="nominee">${escapeHtml(n.nominee)}</p>
