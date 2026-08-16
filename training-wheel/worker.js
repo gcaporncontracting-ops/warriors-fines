@@ -1,29 +1,9 @@
 // clfc-training-wheel — "Who'll be at training this week?"
 //
-// NOT DEPLOYED. Same build concept as clfc-first-goal-scorer: PIN entry,
-// spin a wheel populated from PlayHQ-registered players, land on someone.
-// Deliberately has NONE of FGS's stakes-handling: no D1, no entries, no
-// payment flow, no lockouts, no "already spun" tracking. Every spin is
-// a fresh, independent, purely-for-fun pick with nothing persisted.
-//
-// Requires (not yet configured):
-//   - VOTES_KV binding (same shared namespace as hub / FGS / vote-v2) \u2014
-//     this is the ONLY binding needed. No D1 at all.
-//
-// DATA GAP TO KNOW ABOUT BEFORE DEPLOYING:
-// "Entire list of registered players in all 4 teams" pulls from
-// gradelist:<grade> in VOTES_KV. Those lists only exist for grades in
-// FGS's VOTE_LINKED_GRADES constant, which today is
-// ["League", "Reserves", "Colts"] \u2014 Thirds is NOT included, so Thirds
-// players have never been PIN-registered and won't appear on this wheel
-// (or be able to spin it) until that's changed. Same gap flagged in the
-// voting build. One-line fix in FGS (add "Thirds" to VOTE_LINKED_GRADES)
-// covers this wheel, PIN issuance, and Players' Player all at once \u2014
-// your call on whether Thirds should be in that system before this goes
-// live, since it's a shared switch, not something scoped to just this
-// feature.
+// PIN entry, spin a wheel populated from PlayHQ-registered players, land on someone.
+// Logs all spins to D1 database (spinner name, landed-on player, timestamp).
 
-const ADMIN_PASSCODE = "Warriors-Kick-9247"; // same as FGS, for consistency \u2014 change if you'd rather this app has its own
+const ADMIN_PASSCODE = "Warriors-Kick-9247";
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -36,12 +16,9 @@ function slugify(name) {
   return name.trim().toLowerCase().replace(/\s+/g, "-").replace(/'/g, "");
 }
 
-// Union of every registered grade list, deduped by slug. A player rostered
-// in more than one grade (fringe players) only appears once \u2014 "entire
-// list of registered players/members," not one wheel slot per grade.
 async function getAllRegisteredPlayers(env) {
   const grades = ["League", "Reserves", "Colts", "Thirds"];
-  const seen = new Map(); // slug -> name
+  const seen = new Map();
   for (const grade of grades) {
     const raw = await env.VOTES_KV.get(`gradelist:${grade}`);
     if (!raw) continue;
@@ -54,14 +31,44 @@ async function getAllRegisteredPlayers(env) {
   return [...seen.entries()].map(([slug, name]) => ({ slug, name })).sort((a, b) => a.name.localeCompare(b.name));
 }
 
+async function initializeDatabase(env) {
+  try {
+    await env.SPIN_LOG.exec(`
+      CREATE TABLE IF NOT EXISTS spins (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        spinner_name TEXT NOT NULL,
+        landed_on TEXT NOT NULL,
+        timestamp TEXT NOT NULL
+      )
+    `);
+  } catch (e) {
+    console.error("Database init error:", e);
+  }
+}
+
+async function logSpin(env, spinnerName, landedOn) {
+  const timestamp = new Date().toISOString();
+  try {
+    await env.SPIN_LOG.prepare(`
+      INSERT INTO spins (spinner_name, landed_on, timestamp)
+      VALUES (?, ?, ?)
+    `).bind(spinnerName, landedOn, timestamp).run();
+  } catch (e) {
+    console.error("Error logging spin:", e);
+  }
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const { pathname } = url;
 
-    // Same PIN pattern as every other app \u2014 any registered player can
-    // spin, not just this week's named team, since this is just for a
-    // laugh and everything else about it is deliberately unlocked.
+    // Initialize database on first request
+    if (!env._dbInitialized) {
+      await initializeDatabase(env);
+      env._dbInitialized = true;
+    }
+
     if (pathname === "/api/auth/pin" && request.method === "POST") {
       const { pin, adminPasscode } = await request.json().catch(() => ({}));
       if (!pin || !/^\d{4}$/.test(pin)) return json({ error: "Enter a 4-digit PIN" }, 400);
@@ -75,12 +82,30 @@ export default {
       return json({ ok: true, fullName });
     }
 
-    // The full wheel population \u2014 fetched fresh every time the wheel
-    // page loads. No caching, no "current round" concept: this is always
-    // just "everyone currently registered," full stop.
     if (pathname === "/api/players" && request.method === "GET") {
       const players = await getAllRegisteredPlayers(env);
       return json({ players });
+    }
+
+    if (pathname === "/api/spin-result" && request.method === "POST") {
+      const { spinnerName, landedOn } = await request.json().catch(() => ({}));
+      if (spinnerName && landedOn) {
+        await logSpin(env, spinnerName, landedOn);
+        return json({ ok: true });
+      }
+      return json({ error: "Missing spinner or result" }, 400);
+    }
+
+    if (pathname === "/api/spins" && request.method === "GET") {
+      try {
+        const result = await env.SPIN_LOG.prepare(`
+          SELECT spinner_name, landed_on, timestamp FROM spins
+          ORDER BY id DESC LIMIT 50
+        `).all();
+        return json({ spins: result.results || [] });
+      } catch (e) {
+        return json({ spins: [] });
+      }
     }
 
     return new Response(INDEX_HTML_CONTENT, {
@@ -170,7 +195,7 @@ const app = document.getElementById("app");
 
 function heroHTML(sub){
   return \`
-    <a href="https://warriors-hub.gcaporncontracting.workers.dev/" class="home-link">\u2190 Home</a>
+    <a href="https://warriors-hub.gcaporncontracting.workers.dev/" class="home-link">← Home</a>
     <p class="eyebrow">Cockburn Lakes F.C.</p>
     <h1 class="title">Who's At Training?</h1>
     <p class="subtitle">\${sub}</p>
@@ -182,10 +207,10 @@ function main(){ renderPinScreen(); }
 function renderPinScreen(){
   app.innerHTML = \`
     \${heroHTML("Enter your PIN to spin")}
-    <div class="laugh-note">Just a bit of fun \u2014 doesn't mean anything, doesn't lock you out of anything else. Spin as many times as you like.</div>
+    <div class="laugh-note">Just a bit of fun — doesn't mean anything, doesn't lock you out of anything else. Spin as many times as you like.</div>
     <div class="card">
       <label for="pinInput">Your PIN</label>
-      <input type="tel" id="pinInput" inputmode="numeric" maxlength="4" placeholder="\u2022\u2022\u2022\u2022">
+      <input type="tel" id="pinInput" inputmode="numeric" maxlength="4" placeholder="••••">
       <button class="primary" id="pinBtn">Continue</button>
       <div id="pinError"></div>
     </div>
@@ -205,7 +230,7 @@ function renderPinScreen(){
       if (!res.ok){ errBox.innerHTML = \`<p class="error">\${data.error}</p>\`; btn.disabled = false; return; }
       renderWheel(data.fullName);
     }catch(e){
-      errBox.innerHTML = \`<p class="error">Network error \u2014 try again.</p>\`;
+      errBox.innerHTML = \`<p class="error">Network error — try again.</p>\`;
       btn.disabled = false;
     }
   });
@@ -217,13 +242,13 @@ async function renderWheel(fullName){
   const data = await res.json();
   const players = data.players || [];
   if (players.length === 0){
-    app.innerHTML = \`\${heroHTML("")}<div class="card"><p class="error">No registered players found yet \u2014 try again later.</p></div>\`;
+    app.innerHTML = \`\${heroHTML("")}<div class="card"><p class="error">No registered players found yet — try again later.</p></div>\`;
     return;
   }
   const names = players.map(p => p.name);
 
   app.innerHTML = \`
-    \${heroHTML("Hey " + fullName + " \u2014 spin away")}
+    \${heroHTML("Hey " + fullName + " — spin away")}
     <div class="card">
       <div class="wheel-wrap">
         <div class="pointer"></div>
@@ -243,19 +268,32 @@ async function renderWheel(fullName){
     btn.textContent = "Spinning...";
     const targetIndex = Math.floor(Math.random() * names.length);
     await spinWheel(targetIndex, names.length);
+    const landedOn = names[targetIndex];
     document.getElementById("resultArea").innerHTML = \`
       <div class="result-box">
-        <div class="big-tick">\u{1F3C8}</div>
+        <div class="big-tick">🏈</div>
         <h2>At training this week...</h2>
-        <div class="player-name">\${names[targetIndex]}</div>
+        <div class="player-name">\${landedOn}</div>
       </div>
     \`;
+    await logSpinToServer(fullName, landedOn);
     btn.disabled = false;
     btn.textContent = "Spin again";
   });
 }
 
-// ---- Wheel drawing/animation \u2014 same code and pointer math as FGS ----
+async function logSpinToServer(spinner, landed){
+  try{
+    await fetch("/api/spin-result", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({spinnerName: spinner, landedOn: landed})
+    });
+  }catch(e){
+    console.error("Failed to log spin", e);
+  }
+}
+
 let wheelRotation = 0;
 function drawWheel(options){
   const canvas = document.getElementById("wheelCanvas");
