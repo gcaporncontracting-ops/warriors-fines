@@ -58,6 +58,21 @@ async function logSpin(env, spinnerName, landedOn) {
   }
 }
 
+async function getLandedOnPlayers(env) {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const result = await env.SPIN_LOG.prepare(`
+      SELECT DISTINCT landed_on FROM spins
+      WHERE date(timestamp) = ?
+      ORDER BY landed_on
+    `).bind(today).all();
+    return (result.results || []).map(r => r.landed_on);
+  } catch (e) {
+    console.error("Error fetching landed-on players:", e);
+    return [];
+  }
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -85,6 +100,28 @@ export default {
     if (pathname === "/api/players" && request.method === "GET") {
       const players = await getAllRegisteredPlayers(env);
       return json({ players });
+    }
+
+    if (pathname === "/api/wheel-state" && request.method === "GET") {
+      const allPlayers = await getAllRegisteredPlayers(env);
+      const landedOn = await getLandedOnPlayers(env);
+      const availablePlayers = allPlayers.filter(p => !landedOn.includes(p.name));
+      const spinsResult = await env.SPIN_LOG.prepare(`
+        SELECT spinner_name, landed_on FROM spins
+        WHERE date(timestamp) = ?
+        ORDER BY id DESC LIMIT 50
+      `).bind(new Date().toISOString().split('T')[0]).all();
+      const spins = (spinsResult.results || []).map(r => ({
+        spinner_name: r.spinner_name,
+        landed_on: r.landed_on
+      }));
+      return json({
+        availablePlayers,
+        landedOnPlayers: landedOn,
+        spins,
+        totalPlayers: allPlayers.length,
+        remaining: availablePlayers.length
+      });
     }
 
     if (pathname === "/api/spin-result" && request.method === "POST") {
@@ -251,24 +288,44 @@ function renderPinScreen(){
 
 async function renderWheel(fullName){
   app.innerHTML = \`\${heroHTML("Loading the club...")}<div class="card"><p style="text-align:center;">One sec...</p></div>\`;
-  const res = await fetch("/api/players");
+  const res = await fetch("/api/wheel-state");
   const data = await res.json();
-  const players = data.players || [];
-  if (players.length === 0){
-    app.innerHTML = \`\${heroHTML("")}<div class="card"><p class="error">No registered players found yet — try again later.</p></div>\`;
+  const availablePlayers = data.availablePlayers || [];
+  const spins = data.spins || [];
+  const remaining = data.remaining || 0;
+  const total = data.totalPlayers || 0;
+
+  if (availablePlayers.length === 0){
+    let message = "No registered players found yet — try again later.";
+    if (spins.length > 0) {
+      message = "All players have been spun! Wheel is complete for today.";
+    }
+    app.innerHTML = \`\${heroHTML("")}<div class="card"><p class="error">\${message}</p></div>\`;
     return;
   }
-  const names = players.map(p => p.name);
+  const names = availablePlayers.map(p => p.name);
+  let historyHTML = '';
+  if (spins.length > 0) {
+    historyHTML = \`<div style="margin-top:20px;padding-top:15px;border-top:1px solid rgba(255,255,255,.2);">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold);text-align:center;margin-bottom:10px;text-transform:uppercase;letter-spacing:.1em;">Already spun today (\${spins.length})</div>\`;
+    for (let i = 0; i < Math.min(5, spins.length); i++) {
+      historyHTML += \`<div style="font-size:12px;color:rgba(255,255,255,.6);text-align:center;font-family:'JetBrains Mono',monospace;margin-bottom:6px;"><span style="color:var(--gold);">\${spins[i].spinner_name}</span> → <span style="color:var(--gold);">\${spins[i].landed_on}</span></div>\`;
+    }
+    historyHTML += '</div>';
+  }
 
+  const subtitle = remaining === 1 ? "Last one!" : \`\${remaining} left to spin\`;
   app.innerHTML = \`
     \${heroHTML("Hey " + fullName + " — spin away")}
     <div class="card">
+      <p style="text-align:center;font-size:13px;color:rgba(255,255,255,.7);margin:0 0 14px;font-family:'JetBrains Mono',monospace;font-weight:600;">\${remaining} still in the wheel</p>
       <div class="wheel-wrap">
         <div class="pointer"></div>
         <canvas id="wheelCanvas"></canvas>
       </div>
       <button class="primary" id="spinBtn" style="margin-top:20px;">Spin the wheel</button>
       <div id="resultArea"></div>
+      \${historyHTML}
     </div>
     <div class="center"><a class="back-link" id="startOverLink">Start over</a></div>
   \`;
