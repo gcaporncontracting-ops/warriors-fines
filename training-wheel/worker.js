@@ -33,14 +33,14 @@ async function getAllRegisteredPlayers(env) {
 
 async function initializeDatabase(env) {
   try {
-    await env.SPIN_LOG.exec(`
+    await env.SPIN_LOG.prepare(`
       CREATE TABLE IF NOT EXISTS spins (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         spinner_name TEXT NOT NULL,
         landed_on TEXT NOT NULL,
         timestamp TEXT NOT NULL
       )
-    `);
+    `).run();
   } catch (e) {
     console.error("Database init error:", e);
   }
