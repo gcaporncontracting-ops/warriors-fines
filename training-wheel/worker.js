@@ -185,6 +185,19 @@ const INDEX_HTML_CONTENT = `<!DOCTYPE html>
     display:inline-block;margin-top:18px;font-family:'JetBrains Mono',monospace;font-size:12px;
     color:rgba(255,255,255,.7);text-decoration:none;text-align:center;cursor:pointer;
   }
+  .spin-history{margin-top:30px;padding-top:20px;border-top:2px solid rgba(255,255,255,.2);}
+  .spin-history-title{
+    font-family:'JetBrains Mono',monospace;letter-spacing:.2em;text-transform:uppercase;
+    font-size:12px;color:var(--gold);text-align:center;margin:0 0 12px;font-weight:700;
+  }
+  .spin-entry{
+    background:rgba(242,177,52,.1);border:1px solid rgba(242,177,52,.3);border-radius:8px;
+    padding:10px 12px;margin-bottom:8px;font-size:13px;text-align:center;
+    font-family:'JetBrains Mono',monospace;
+  }
+  .spin-entry .spinner{color:var(--gold);font-weight:700;}
+  .spin-entry .arrow{color:var(--gold);margin:0 6px;}
+  .spin-entry .player{color:var(--gold);font-weight:700;}
 </style>
 </head>
 <body>
@@ -269,14 +282,28 @@ async function renderWheel(fullName){
     const targetIndex = Math.floor(Math.random() * names.length);
     await spinWheel(targetIndex, names.length);
     const landedOn = names[targetIndex];
+    await logSpinToServer(fullName, landedOn);
+    const spinsRes = await fetch("/api/spins");
+    const spinsData = await spinsRes.json();
+    const spins = spinsData.spins || [];
+    let historyHTML = '';
+    if (spins.length > 0) {
+      historyHTML = \`<div class="spin-history">
+        <div class="spin-history-title">Who spun who</div>\`;
+      for (let i = 0; i < Math.min(5, spins.length); i++) {
+        const spin = spins[i];
+        historyHTML += \`<div class="spin-entry"><span class="spinner">\${spin.spinner_name}</span> <span class="arrow">→</span> <span class="player">\${spin.landed_on}</span></div>\`;
+      }
+      historyHTML += '</div>';
+    }
     document.getElementById("resultArea").innerHTML = \`
       <div class="result-box">
         <div class="big-tick">🏈</div>
         <h2>At training this week...</h2>
         <div class="player-name">\${landedOn}</div>
       </div>
+      \${historyHTML}
     \`;
-    await logSpinToServer(fullName, landedOn);
     btn.disabled = false;
     btn.textContent = "Spin again";
   });
