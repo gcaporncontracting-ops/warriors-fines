@@ -109,9 +109,10 @@ export default {
       const spinsResult = await env.SPIN_LOG.prepare(`
         SELECT spinner_name, landed_on FROM spins
         WHERE date(timestamp) = ?
-        ORDER BY id DESC LIMIT 50
+        ORDER BY id DESC
       `).bind(new Date().toISOString().split('T')[0]).all();
-      const spins = (spinsResult.results || []).map(r => ({
+      const allSpins = (spinsResult.results || []);
+      const spins = allSpins.map(r => ({
         spinner_name: r.spinner_name,
         landed_on: r.landed_on
       }));
@@ -120,7 +121,8 @@ export default {
         landedOnPlayers: landedOn,
         spins,
         totalPlayers: allPlayers.length,
-        remaining: availablePlayers.length
+        remaining: availablePlayers.length,
+        spinCount: allSpins.length
       });
     }
 
@@ -229,11 +231,10 @@ const INDEX_HTML_CONTENT = `<!DOCTYPE html>
   }
   .spin-entry{
     background:rgba(242,177,52,.1);border:1px solid rgba(242,177,52,.3);border-radius:8px;
-    padding:10px 12px;margin-bottom:8px;font-size:13px;text-align:center;
-    font-family:'JetBrains Mono',monospace;
+    padding:12px 14px;margin-bottom:10px;font-size:13px;text-align:center;
+    color:rgba(255,255,255,.8);line-height:1.5;
   }
   .spin-entry .spinner{color:var(--gold);font-weight:700;}
-  .spin-entry .arrow{color:var(--gold);margin:0 6px;}
   .spin-entry .player{color:var(--gold);font-weight:700;}
 </style>
 </head>
@@ -306,10 +307,11 @@ async function renderWheel(fullName){
   const names = availablePlayers.map(p => p.name);
   let historyHTML = '';
   if (spins.length > 0) {
+    const spinCount = data.spinCount || spins.length;
     historyHTML = \`<div style="margin-top:20px;padding-top:15px;border-top:1px solid rgba(255,255,255,.2);">
-      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold);text-align:center;margin-bottom:10px;text-transform:uppercase;letter-spacing:.1em;">Already spun today (\${spins.length})</div>\`;
-    for (let i = 0; i < Math.min(5, spins.length); i++) {
-      historyHTML += \`<div style="font-size:12px;color:rgba(255,255,255,.6);text-align:center;font-family:'JetBrains Mono',monospace;margin-bottom:6px;"><span style="color:var(--gold);">\${spins[i].spinner_name}</span> → <span style="color:var(--gold);">\${spins[i].landed_on}</span></div>\`;
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold);text-align:center;margin-bottom:12px;text-transform:uppercase;letter-spacing:.1em;">Who thinks who's at training (\${spinCount})</div>\`;
+    for (let i = 0; i < Math.min(8, spins.length); i++) {
+      historyHTML += \`<div style="font-size:12px;color:rgba(255,255,255,.75);text-align:center;margin-bottom:8px;line-height:1.4;"><span style="color:var(--gold);font-weight:600;">\${spins[i].spinner_name}</span> thinks <span style="color:var(--gold);font-weight:600;">\${spins[i].landed_on}</span> will be at training</div>\`;
     }
     historyHTML += '</div>';
   }
@@ -346,10 +348,10 @@ async function renderWheel(fullName){
     let historyHTML = '';
     if (spins.length > 0) {
       historyHTML = \`<div class="spin-history">
-        <div class="spin-history-title">Who spun who</div>\`;
-      for (let i = 0; i < Math.min(5, spins.length); i++) {
+        <div class="spin-history-title">Who thinks who's at training</div>\`;
+      for (let i = 0; i < Math.min(8, spins.length); i++) {
         const spin = spins[i];
-        historyHTML += \`<div class="spin-entry"><span class="spinner">\${spin.spinner_name}</span> <span class="arrow">→</span> <span class="player">\${spin.landed_on}</span></div>\`;
+        historyHTML += \`<div class="spin-entry"><span class="spinner">\${spin.spinner_name}</span> thinks <span class="player">\${spin.landed_on}</span> will be at training</div>\`;
       }
       historyHTML += '</div>';
     }
